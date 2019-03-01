@@ -44,11 +44,11 @@ The documentation for each of these functions can be viewed using `(documentatio
     #(4 5 A 555)
     CL-USER> (digikar-utilities:join-using " " '("aa" "b")) ; also works with vectors
     "aa b"
-	CL-USER> (digikar-utilities:make-hash '(("a" 1) (5 25)))
+    CL-USER> (digikar-utilities:make-hash '(("a" 1) (5 25)))
     #{"a" 1, 5 25}
     CL-USER> #{"b" 1, 5 "five", "5+6" (+ 5 6), 'a 7, 'myvar myvar}
     #{"b" 1, 5 "five", "5+6" 11, A 7, MYVAR 555}
-    CL-USER> #{"one" #{1 2}} ; see non-example below
+    CL-USER> #{"one" #{1 2}} ; other combinations also work
     #{"one" #{1 2}}
     CL-USER> (digikar-utilities.logic:gen-truth-table (a b c) (and a b c))
     
@@ -63,14 +63,3 @@ The documentation for each of these functions can be viewed using `(documentatio
     (NIL NIL NIL) NIL
     NIL
 ```
-
-#### Non-examples
-```lisp
-    CL-USER> #{"one" #(1)}
-    ; error
-    CL-USER> #(1 #(2))
-    ; error
-    CL-USER> #(1 #{2 3})
-    ; error
-
-``
