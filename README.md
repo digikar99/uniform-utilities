@@ -48,7 +48,8 @@ The documentation for each of these functions can be viewed using `(documentatio
     #{"a" 1, 5 25}
     CL-USER> #{"b" 1, 5 "five", "5+6" (+ 5 6), 'a 7, 'myvar myvar}
     #{"b" 1, 5 "five", "5+6" 11, A 7, MYVAR 555}
-
+    CL-USER> #{"one" #{1 2}} ; see non-example below
+    #{"one" #{1 2}}
     CL-USER> (digikar-utilities.logic:gen-truth-table (a b c) (and a b c))
     
     (A B C) 
@@ -62,3 +63,14 @@ The documentation for each of these functions can be viewed using `(documentatio
     (NIL NIL NIL) NIL
     NIL
 ```
+
+#### Non-examples
+```lisp
+    CL-USER> #{"one" #(1)}
+    ; error
+    CL-USER> #(1 #(2))
+    ; error
+    CL-USER> #(1 #{2 3})
+    ; error
+
+``
