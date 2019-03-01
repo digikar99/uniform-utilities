@@ -7,27 +7,27 @@ This is yet another utility library for common lisp. (Several libraries can be f
 
 I don't think it is good enough yet; therefore, I'm using a personalized name - in case someone comes up with a "God" level library, let them use a good name. (Learnt over reddit that one should give a good name, only after it is proven to be good. And it is reasonable: we don't want to waste good names. :p)
 
-## 1 min overview
+## 1 Min Overview
 
 A lot of libraries lack a "1 min overview". Here's the 1 min-overview: (In fact, this is the only overview.)
 
 #### Packages and exported functions / macros
 
-<u>digikar-utilities</u>
+_digikar-utilities_
 
 - nilp
 - make-hash
 - make--vector
 - join-using
 
-<u>digikar-utilities.logic</u>
+_digikar-utilities.logic_
 
 - ->
 - <-
 - <>
 - gen-truth-table
 
-The documentation for each of these functions can be viewed using `(documentation '`<i>`function-name`<i>` 'function)`.  
+The documentation for each of these functions can be viewed using `(documentation`_`'function-name`_`'function)`.  
 
 #### Examples
 
