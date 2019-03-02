@@ -1,5 +1,5 @@
 (load "digikar-utilities")
-(use-package :digikar-utilities)
+(use-package :digikar-utilities )
 
 (print "digikar-utilities loaded.")
 
@@ -9,7 +9,10 @@
             (join-using " " '("aa" "b"))
             #(1 2 3 (+ 5 6) t myvar)
 	    (make-hash '(("a" 1) (5 25)))
-	    #{"b" 1, 5 "five", "5+6" (+ 5 6), 'a 7, 'myvar myvar})
+	    #{"b" 1, 5 "five", "5+6" (+ 5 6), 'a 7, 'myvar myvar}
+	    (list-case '(1 2 3)
+		       ((x y) (+ x y))
+		       ((x y z) (- (+ x y) z))))
       do (print cmd))
 
       

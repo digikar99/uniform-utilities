@@ -11,7 +11,8 @@
    :nilp
    :make-hash
    :make-vector
-   :join-using))
+   :join-using
+   :list-case))
 
 (in-package :digikar-utilities)
 (defun nilp (list) "Returns nil if the list is not nil." (equal '() list))
@@ -159,6 +160,16 @@ Equivalent of the python delimiter.join function."
 (set-macro-character +hash+ 'read-vectors-and-hash-tables)
 (set-macro-character +right-bracket+ 'read-delimiter)
 (set-macro-character +right-brace+ 'read-delimiter)
+
+;; ------------------------------------------------------------------------
+
+(defmacro list-case (list &rest clauses)
+  `(let ((len (length ,list)))
+     (case len
+       ,@(loop for clause in clauses
+	       collect (list (length (car clause)) 
+			     `(destructuring-bind ,(car clause) ,list
+				,@(cdr clause)))))))
 
 ;; ========================================================================
 

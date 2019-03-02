@@ -19,6 +19,7 @@ _digikar-utilities_
 - make-hash
 - make--vector
 - join-using
+- list-case
 
 _digikar-utilities.logic_
 
@@ -36,20 +37,33 @@ The documentation for each of these functions can be viewed using `(documentatio
     CL-USER> (load "digikar-utilities.lisp")
     ;; some warnings
     T
+
     CL-USER> (digikar-utilities:make-vector '(1 2 3))
     #(1 2 3)
+
     CL-USER> (setq myvar 555)
     555
+
     CL-USER> #(4 5 'a myvar)
     #(4 5 A 555)
+
     CL-USER> (digikar-utilities:join-using " " '("aa" "b")) ; also works with vectors
     "aa b"
+
     CL-USER> (digikar-utilities:make-hash '(("a" 1) (5 25)))
     #{"a" 1, 5 25}
+
     CL-USER> #{"b" 1, 5 "five", "5+6" (+ 5 6), 'a 7, 'myvar myvar}
     #{"b" 1, 5 "five", "5+6" 11, A 7, MYVAR 555}
+
     CL-USER> #{"one" #{1 2}} ; other combinations also work
     #{"one" #{1 2}}
+
+    CL-USER> (digikar-utilities:list-case '(1 2 3)
+                                          ((x y) (+ x y))
+		                                  ((x y z) (- (+ x y) z)))
+    0
+    
     CL-USER> (digikar-utilities.logic:gen-truth-table (a b c) (and a b c))
     
     (A B C) 
