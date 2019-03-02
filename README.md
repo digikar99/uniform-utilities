@@ -28,7 +28,7 @@ _digikar-utilities.logic_
 - <>
 - gen-truth-table
 
-The documentation for each of these functions can be viewed using `(documentation`_`'function-name`_`'function)`.  
+The documentation for each of these can be viewed using `(describe ,symbol-name)`. (Eg. `(describe 'join-using)`.) 
 
 #### Examples
 
@@ -61,7 +61,7 @@ The documentation for each of these functions can be viewed using `(documentatio
 
     CL-USER> (digikar-utilities:list-case '(1 2 3)
                                           ((x y) (+ x y))
-		                                  ((x y z) (- (+ x y) z)))
+	                                  ((x y z) (- (+ x y) z)))
     0
     
     CL-USER> (digikar-utilities.logic:gen-truth-table (a b c) (and a b c))
