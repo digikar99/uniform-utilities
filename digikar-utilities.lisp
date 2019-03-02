@@ -164,6 +164,11 @@ Equivalent of the python delimiter.join function."
 ;; ------------------------------------------------------------------------
 
 (defmacro list-case (list &rest clauses)
+  "Case using different lengths of list.
+Example: CL-USER> (list-case '(1 2 3)
+                             ((x y) (+ x y))
+                             ((x y z) (- (+ x y) z)))
+         0"
   `(let ((len (length ,list)))
      (case len
        ,@(loop for clause in clauses
