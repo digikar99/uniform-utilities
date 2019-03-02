@@ -107,7 +107,7 @@ Equivalent of the python delimiter.join function."
           nil)
       (read input-stream t nil t))))
 
-(defun read-left-bracket (stream char)
+(defun read-left-bracket (stream char n)
   (declare (ignore char))
   (let ((*readtable* (copy-readtable)))
     (loop
@@ -131,7 +131,7 @@ Equivalent of the python delimiter.join function."
             ((and delimiter (char= next-char delimiter)) nil))
           object))))
 
-(defun read-left-brace (stream char)
+(defun read-left-brace (stream char n)
   (declare (ignore char))
   (let ((*readtable* (copy-readtable)))
     (set-macro-character +comma+ 'read-separator)
@@ -146,18 +146,8 @@ Equivalent of the python delimiter.join function."
       collect (list (eval key) (eval value)) into pairs
       finally (return (make-hash pairs)))))
 
-(defun read-vectors-and-hash-tables (stream char)
-  (declare (ignore char))
-  (flet ((peek-next-char () (peek-char t stream t nil t))
-         (discard-next-char () (read-char stream t nil t)))
-    (cond ((char= (peek-next-char) +left-bracket+)
-           (discard-next-char)
-           (read-left-bracket stream (peek-next-char)))
-          ((char= (peek-next-char) +left-brace+)
-           (discard-next-char)
-           (read-left-brace stream (peek-next-char))))))
-
-(set-macro-character +hash+ 'read-vectors-and-hash-tables)
+(set-dispatch-macro-character #\# #\( #'read-left-bracket)
+(set-dispatch-macro-character #\# #\{ #'read-left-brace)
 (set-macro-character +right-bracket+ 'read-delimiter)
 (set-macro-character +right-brace+ 'read-delimiter)
 
