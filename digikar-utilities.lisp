@@ -14,10 +14,10 @@
    :join-using
    :list-case
    :get-val
-   :set-val))
+   :set-val
+   :add))
 
 (in-package :digikar-utilities)
-(defun nilp (list) "Returns nil if the list is not nil." (equal '() list))
 
 ;; the following function needs to be defined before the
 ;; +format-delimiters+ constant, for obvious reasons.
@@ -168,6 +168,8 @@ the value at position key in the vector, to value."
 
 ;; ------------------------------------------------------------------------
 
+(defun nilp (list) "Returns nil if the list is not nil." (equal '() list))
+
 (defmacro list-case (list &rest clauses)
   "Case using different lengths of list.
 Example: CL-USER> (list-case '(1 2 3)
@@ -180,6 +182,13 @@ Example: CL-USER> (list-case '(1 2 3)
 	       collect (list (length (car clause)) 
 			     `(destructuring-bind ,(car clause) ,list
 				,@(cdr clause)))))))
+
+(defun add (&rest args)
+  "Returns the addition of numbers, or concatenation of strings or lists."
+  (when list
+    (cond ((numberp (first list)) (apply #'+ list))
+          ((listp (first list)) (apply #'append list))
+          ((stringp (first list)) (apply #'concatenate 'string list)))))
 
 ;; ========================================================================
 
