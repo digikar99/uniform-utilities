@@ -42,7 +42,7 @@ The documentation for each of these can be viewed using `(describe ,symbol-name)
     CL-USER> (setq myvar 555)
     555
 
-    CL-USER> #(4 5 'a myvar)
+    CL-USER> (setq a #(4 5 'a myvar))
     #(4 5 A 555)
 
     CL-USER> (digikar-utilities:join-using " " '("aa" "b")) ; also works with vectors
@@ -51,8 +51,14 @@ The documentation for each of these can be viewed using `(describe ,symbol-name)
     CL-USER> (digikar-utilities:make-hash '(("a" 1) (5 25)))
     #{"a" 1, 5 25}
 
-    CL-USER> #{"b" 1, 5 "five", "5+6" (+ 5 6), 'a 7, 'myvar myvar}
+    CL-USER> (setq b #{"b" 1, 5 "five", "5+6" (+ 5 6), 'a 7, 'myvar myvar})
     #{"b" 1, 5 "five", "5+6" 11, A 7, MYVAR 555}
+
+    CL-USER> (get-val a 0) ; also works for hash-tables
+    4
+
+    CL-USER> (set-val b '(+ 1 2) 3) ; also works for vectors
+    3
 
     CL-USER> #{"one" #{1 2}} ; other combinations also work
     #{"one" #{1 2}}

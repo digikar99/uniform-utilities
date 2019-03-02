@@ -12,7 +12,9 @@
    :make-hash
    :make-vector
    :join-using
-   :list-case))
+   :list-case
+   :get-val
+   :set-val))
 
 (in-package :digikar-utilities)
 (defun nilp (list) "Returns nil if the list is not nil." (equal '() list))
@@ -67,7 +69,6 @@ Equivalent of the python delimiter.join function."
   "Converts list to vector."
   (apply #'vector list))
 
-
 ;; Redefining print-object for vectors is a (lot?) more work than
 ;; just the below function, since even strings are vectors.
 ;; (defmethod print-object ((vec vector) out)
@@ -75,6 +76,20 @@ Equivalent of the python delimiter.join function."
 ;;                            "["
 ;;                            (join-using " " vec)
 ;;                            "]")))
+
+(defun get-val (vec/hash key)
+  "Get the value associated with key in the hash-table, or 
+the value at position key in the vector."
+  (cond ((vectorp vec/hash) (aref vec/hash key))
+	((hash-table-p vec/hash) (gethash key vec/hash))
+	(t (error "Expected vector or hash-table"))))
+
+(defun set-val (vec/hash key value)
+  "Set the value (destructive) associated with key in the hash-table, or 
+the value at position key in the vector, to value."
+  (cond ((vectorp vec/hash) (setf (aref vec/hash key) value))
+	((hash-table-p vec/hash) (setf (gethash key vec/hash) value))
+	(t (error "Expected vector or hash-table"))))
 
 ;; ==========================================================================
 ;; The following code for json-like reader macros was originally found at:
