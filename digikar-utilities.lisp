@@ -185,10 +185,10 @@ Example: CL-USER> (list-case '(1 2 3)
 
 (defun add (&rest args)
   "Returns the addition of numbers, or concatenation of strings or lists."
-  (when list
-    (cond ((numberp (first list)) (apply #'+ list))
-          ((listp (first list)) (apply #'append list))
-          ((stringp (first list)) (apply #'concatenate 'string list)))))
+  (when args
+    (cond ((numberp (first args)) (apply #'+ args))
+          ((listp (first args)) (apply #'append args))
+          ((stringp (first args)) (apply #'concatenate 'string args)))))
 
 ;; ========================================================================
 

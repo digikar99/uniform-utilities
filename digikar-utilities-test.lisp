@@ -12,7 +12,10 @@
 	    #{"b" 1, 5 "five", "5+6" (+ 5 6), 'a 7, 'myvar myvar}
 	    (list-case '(1 2 3)
 		       ((x y) (+ x y))
-		       ((x y z) (- (+ x y) z))))
+		       ((x y z) (- (+ x y) z)))
+	    (add 5 6 7)
+	    (add "a" "bc")
+	    (add '(1 2 3) '(4)))
       do (print cmd))
 
       
