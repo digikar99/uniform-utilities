@@ -15,7 +15,10 @@
    :list-case
    :get-val
    :set-val
-   :add))
+   :add
+   :nand
+   :nor
+   :prefix-to-infix))
 
 (in-package :digikar-utilities)
 
@@ -190,6 +193,19 @@ Example: CL-USER> (list-case '(1 2 3)
           ((listp (first args)) (apply #'append args))
           ((stringp (first args)) (apply #'concatenate 'string args)))))
 
+(defmacro nand (&rest args) `(not (and ,@args)))
+(defmacro nor (&rest args) `(not (or ,@args)))
+
+(defun prefix-to-infix (expr)
+  (cond ((or (not (listp expr))
+             (equal 'not (car expr))) expr)
+        (t
+         (apply #'append `(,(prefix-to-infix (cadr expr)))
+                (loop for var in (cddr expr)
+                      collect (list (car expr)
+                                    (prefix-to-infix var)))))))
+
+
 ;; ========================================================================
 
 (defpackage :digikar-utilities.logic
@@ -219,3 +235,5 @@ the boolean variables present in expr."
      (loop for case in all-cases do
            (print case)
            (princ (apply (lambda ,symbols ,expression) case)))))
+
+

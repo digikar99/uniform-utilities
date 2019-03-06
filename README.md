@@ -21,6 +21,9 @@ _digikar-utilities_
 - get-val
 - set-val
 - add
+- nand
+- nor
+- prefix-to-infix
 
 _digikar-utilities.logic_
 
@@ -79,6 +82,9 @@ The documentation for each of these can be viewed using `(describe ,symbol-name)
 
     CL-USER> (digikar-utilities:add '(1 2 3) '(4)) ; those are only three cases here
     (1 2 3 4)
+
+    CL-USER> (digikar-utilities:prefix-to-infix '(+ a (- 4 5) b))
+    (A + (4 - 5) + B)
 
     CL-USER> (digikar-utilities.logic:gen-truth-table (a b c) (and a b c))
     
