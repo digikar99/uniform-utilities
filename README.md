@@ -86,6 +86,9 @@ The documentation for each of these can be viewed using `(describe ,symbol-name)
     CL-USER> (digikar-utilities:prefix-to-infix '(+ a (- 4 5) b))
     (A + (4 - 5) + B)
 
+    CL-USER> (digikar-utilities:list-intersection '((1 2 3) (2 3) (1 3 5))
+    (3)
+
     CL-USER> (digikar-utilities.logic:gen-truth-table (a b c) (and a b c))
     
     (A B C) 

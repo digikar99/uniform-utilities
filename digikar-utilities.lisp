@@ -18,7 +18,8 @@
    :add
    :nand
    :nor
-   :prefix-to-infix))
+   :prefix-to-infix
+   :list-intersection))
 
 (in-package :digikar-utilities)
 
@@ -204,6 +205,10 @@ Example: CL-USER> (list-case '(1 2 3)
                 (loop for var in (cddr expr)
                       collect (list (car expr)
                                     (prefix-to-infix var)))))))
+
+(defun list-intersection (l)
+  (cond ((not (cdr l)) (car l))
+	(t (intersection (car l) (list-intersection (cdr l))))))
 
 
 ;; ========================================================================
