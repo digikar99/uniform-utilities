@@ -30,7 +30,7 @@
 with the mapping 1=>2 and 3=>4."
   (if (hash-table-p pairs)
       pairs ; to take care of the reader macro syntax confusion defined below
-      (let ((hash-table (make-hash-table)))
+      (let ((hash-table (make-hash-table :test 'equal)))
         (loop for (key val) in pairs do
               (setf (gethash key hash-table) val))
         hash-table)))
@@ -206,9 +206,12 @@ Example: CL-USER> (list-case '(1 2 3)
                       collect (list (car expr)
                                     (prefix-to-infix var)))))))
 
-(defun list-intersection (l)
+(defun list-intersection (l &key (test #'equal))
+  ;; key and test-not are not yet implemented
   (cond ((not (cdr l)) (car l))
-	(t (intersection (car l) (list-intersection (cdr l))))))
+	(t (intersection (car l) 
+			 (list-intersection (cdr l) :test test) 
+			 :test test))))
 
 
 ;; ========================================================================
