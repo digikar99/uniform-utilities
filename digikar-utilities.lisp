@@ -65,8 +65,8 @@ Equivalent of the python delimiter.join function."
                       (loop for key being the hash-keys of hash
                             for val being the hash-values of hash
                             collect (join-using " "
-                                                (list (stringify key)
-                                                      (stringify val))))))
+                                                (list (write-to-string key)
+                                                      (write-to-string val))))))
   (format out "}"))
 
 (defun make-vector (list)
