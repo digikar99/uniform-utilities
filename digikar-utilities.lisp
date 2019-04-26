@@ -11,6 +11,8 @@
    :nilp
    :make-hash
    :make-vector
+   :*eval-in-vector*
+   :*eval-in-hash-table*
    :join-using
    :list-case
    :get-val
@@ -126,13 +128,16 @@ the value at position key in the vector, to value."
           nil)
       (read input-stream t nil t))))
 
+(defvar *eval-in-vector* t
+  "If true #(a b) can be read as #(1 2), where a=1 and b=2; else as #(a b).")
+
 (defun read-left-bracket (stream char n)
   (declare (ignore char))
   (let ((*readtable* (copy-readtable)))
     (loop
       for object = (read-next-object-for-vector +right-bracket+ stream)
       while object
-      collect (eval object) into objects
+      collect (if *eval-in-vector* (eval object) object) into objects
       finally (return (make-vector objects)))))
 
 (defun read-next-object-for-hash-table
@@ -150,6 +155,9 @@ the value at position key in the vector, to value."
             ((and delimiter (char= next-char delimiter)) nil))
           object))))
 
+(defvar *eval-in-hash-table* t
+  "If true #{a b} can be read as #{1 2}, where a=1 and b=2; else as #{a b}.")
+
 (defun read-left-brace (stream char n)
   (declare (ignore char))
   (let ((*readtable* (copy-readtable)))
@@ -162,7 +170,10 @@ the value at position key in the vector, to value."
       for value = (read-next-object-for-hash-table +right-brace+
                                                    +comma+
                                                    stream)
-      collect (list (eval key) (eval value)) into pairs
+      collect (if *eval-in-hash-table*
+		  (list (eval key) (eval value))
+		(list key value))
+      into pairs
       finally (return (make-hash pairs)))))
 
 (set-dispatch-macro-character #\# #\( #'read-left-bracket)

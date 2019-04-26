@@ -51,6 +51,15 @@ The documentation for each of these can be viewed using `(describe ,symbol-name)
     CL-USER> (setq a #(4 5 'a myvar))
     #(4 5 A 555)
 
+    CL-USER> (setq *eval-in-vector* nil) ;; also *eval-in-hash-table*
+    ;; however, also note that this does not work in progn
+    nil
+
+    CL-USER> #(a b)
+    #(a b)
+
+    CL-USER> (setq *eval-in-vector* t)
+
     CL-USER> (digikar-utilities:join-using " " '("aa" "b")) ; also works with vectors
     "aa b"
 
