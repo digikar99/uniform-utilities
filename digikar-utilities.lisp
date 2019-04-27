@@ -37,7 +37,7 @@ with the mapping 1=>2 and 3=>4."
               (setf (gethash key hash-table) val))
         hash-table)))
 
-(defconstant +format-delimiters+
+(defvar +format-delimiters+
   (make-hash '(("\n" "~%"))))
 (defun get-format-delimiters (delimiter)
   "format uses some seemingly obscure delimiters, such as ~% instead of \n."
@@ -133,6 +133,7 @@ the value at position key in the vector, to value."
 
 (defun read-left-bracket (stream char n)
   (declare (ignore char))
+  (declare (ignore n))
   (let ((*readtable* (copy-readtable)))
     (loop
       for object = (read-next-object-for-vector +right-bracket+ stream)
@@ -160,6 +161,7 @@ the value at position key in the vector, to value."
 
 (defun read-left-brace (stream char n)
   (declare (ignore char))
+  (declare (ignore n))
   (let ((*readtable* (copy-readtable)))
     (set-macro-character +comma+ 'read-separator)
     (loop
