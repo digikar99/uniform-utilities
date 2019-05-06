@@ -24,6 +24,7 @@ _digikar-utilities_
 - nand
 - nor
 - prefix-to-infix
+- when-option
 
 _digikar-utilities.logic_
 
@@ -111,3 +112,5 @@ The documentation for each of these can be viewed using `(describe ,symbol-name)
     (NIL NIL NIL) NIL
     NIL
 ```
+
+The rightful place for `when-option` is [unix-opts](https://github.com/libre-man/unix-opts). It would be here until it is added there.

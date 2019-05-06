@@ -20,6 +20,7 @@
    :add
    :nand
    :nor
+   :when-option
    :prefix-to-infix
    :list-intersection))
 
@@ -225,6 +226,16 @@ Example: CL-USER> (list-case '(1 2 3)
 	(t (intersection (car l) 
 			 (list-intersection (cdr l) :test test) 
 			 :test test))))
+
+(defmacro when-option ((options opt) &body body)
+  "Enables the use of the symbol 'it' to access the argument attached with
+the option 'opt.
+PS: This is better suited to be in unix-opts. But until it is added there,
+it is here."
+  `(let ((it (getf ,options ,opt)))
+     (when it
+       ,@body)))
+
 
 
 ;; ========================================================================
