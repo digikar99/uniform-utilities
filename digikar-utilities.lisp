@@ -21,7 +21,9 @@
    :nand
    :nor
    :prefix-to-infix
-   :list-intersection))
+   :list-intersection
+   :read-file
+   :write-file))
 
 (in-package :digikar-utilities)
 
@@ -225,6 +227,17 @@ Example: CL-USER> (list-case '(1 2 3)
 	(t (intersection (car l) 
 			 (list-intersection (cdr l) :test test) 
 			 :test test))))
+
+(defun read-file (filename)
+  "Read and returns the first lisp-object from file filename."
+  (with-open-file (f filename :direction :input :if-does-not-exist nil)
+		  (read f)))
+
+(defun write-file (filename lisp-object)
+  "Writes the lisp-object to file filename, overwrites if the file already exists."
+  (with-open-file (f filename :direction :output :if-does-not-exist :create
+		     :if-exists :supersede)
+		  (format f "~d" lisp-object)))
 
 ;; ========================================================================
 

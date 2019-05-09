@@ -24,6 +24,8 @@ _digikar-utilities_
 - nand
 - nor
 - prefix-to-infix
+- write-file
+- read-file
 
 _digikar-utilities.logic_
 
@@ -94,6 +96,12 @@ The documentation for each of these can be viewed using `(describe ,symbol-name)
 
     CL-USER> (digikar-utilities:prefix-to-infix '(+ a (- 4 5) b))
     (A + (4 - 5) + B)
+
+    CL-USER> (digikar-utilities:write-file "testing" '(a b c))
+    NIL
+
+    CL-USER> (digikar-utilities:read-file "testing")
+    (a b c)
 
     CL-USER> (digikar-utilities:list-intersection '((1 2 3) (2 3) (1 3 5))
     (3)
