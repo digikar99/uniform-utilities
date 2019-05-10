@@ -23,7 +23,8 @@
    :prefix-to-infix
    :list-intersection
    :read-file
-   :write-file))
+   :write-file
+   :getf-equal))
 
 (in-package :digikar-utilities)
 
@@ -231,13 +232,19 @@ Example: CL-USER> (list-case '(1 2 3)
 (defun read-file (filename)
   "Read and returns the first lisp-object from file filename."
   (with-open-file (f filename :direction :input :if-does-not-exist nil)
-		  (read f)))
+		  (when f (read f))))
 
 (defun write-file (filename lisp-object)
   "Writes the lisp-object to file filename, overwrites if the file already exists."
   (with-open-file (f filename :direction :output :if-does-not-exist :create
 		     :if-exists :supersede)
 		  (format f "~d" lisp-object)))
+
+(defun getf-equal (plist indicator)
+  (loop for key in plist by #'cddr
+        for value in (rest plist) by #'cddr
+        when (equal key indicator)
+        return value))
 
 ;; ========================================================================
 
