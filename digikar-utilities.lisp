@@ -37,10 +37,10 @@
 with the mapping 1=>2 and 3=>4."
   (if (hash-table-p pairs)
       pairs ; to take care of the reader macro syntax confusion defined below
-      (let ((hash-table (make-hash-table :test 'equal)))
-        (loop for (key val) in pairs do
-              (setf (gethash key hash-table) val))
-        hash-table)))
+    (let ((hash-table (make-hash-table :test 'equal)))
+      (loop for (key val) in pairs do
+            (setf (gethash key hash-table) val))
+      hash-table)))
 
 (defvar +format-delimiters+
   (make-hash '(("\n" "~%"))))
@@ -63,7 +63,7 @@ Equivalent of the python delimiter.join function."
 (defun stringify (str)
   (if (stringp str) 
       (concatenate 'string "\"" str "\"")
-      str))
+    str))
 
 (defmethod print-object ((hash hash-table) out)
   (format out "#{")
@@ -92,15 +92,15 @@ Equivalent of the python delimiter.join function."
   "Get the value associated with key in the hash-table, or 
 the value at position key in the vector."
   (cond ((vectorp vec/hash) (aref vec/hash key))
-	((hash-table-p vec/hash) (gethash key vec/hash))
-	(t (error "Expected vector or hash-table"))))
+        ((hash-table-p vec/hash) (gethash key vec/hash))
+        (t (error "Expected vector or hash-table"))))
 
 (defun set-val (vec/hash key value)
   "Set the value (destructive) associated with key in the hash-table, or 
 the value at position key in the vector, to value."
   (cond ((vectorp vec/hash) (setf (aref vec/hash key) value))
-	((hash-table-p vec/hash) (setf (gethash key vec/hash) value))
-	(t (error "Expected vector or hash-table"))))
+        ((hash-table-p vec/hash) (setf (gethash key vec/hash) value))
+        (t (error "Expected vector or hash-table"))))
 
 ;; ==========================================================================
 ;; The following code for json-like reader macros was originally found at:
@@ -141,10 +141,10 @@ the value at position key in the vector, to value."
   (declare (ignore n))
   (let ((*readtable* (copy-readtable)))
     (loop
-      for object = (read-next-object-for-vector +right-bracket+ stream)
-      while object
-      collect (if *eval-in-vector* (eval object) object) into objects
-      finally (return (make-vector objects)))))
+     for object = (read-next-object-for-vector +right-bracket+ stream)
+     while object
+     collect (if *eval-in-vector* (eval object) object) into objects
+     finally (return (make-vector objects)))))
 
 (defun read-next-object-for-hash-table
     (delimiter separator &optional (input-stream *standard-input*))
@@ -154,12 +154,12 @@ the value at position key in the vector, to value."
         (progn
           (discard-next-char)
           nil)
-        (let* ((object (read input-stream t nil t))
-               (next-char (peek-next-char)))
-          (cond
-            ((char= next-char separator) (discard-next-char))
-            ((and delimiter (char= next-char delimiter)) nil))
-          object))))
+      (let* ((object (read input-stream t nil t))
+             (next-char (peek-next-char)))
+        (cond
+         ((char= next-char separator) (discard-next-char))
+         ((and delimiter (char= next-char delimiter)) nil))
+        object))))
 
 (defvar *eval-in-hash-table* t
   "If true #{a b} can be read as #{1 2}, where a=1 and b=2; else as #{a b}.")
@@ -170,18 +170,18 @@ the value at position key in the vector, to value."
   (let ((*readtable* (copy-readtable)))
     (set-macro-character +comma+ 'read-separator)
     (loop
-      for key = (read-next-object-for-hash-table +right-brace+
-                                                 +comma+
-                                                 stream)
-      while key
-      for value = (read-next-object-for-hash-table +right-brace+
-                                                   +comma+
-                                                   stream)
-      collect (if *eval-in-hash-table*
-		  (list (eval key) (eval value))
-		(list key value))
-      into pairs
-      finally (return (make-hash pairs)))))
+     for key = (read-next-object-for-hash-table +right-brace+
+                                                +comma+
+                                                stream)
+     while key
+     for value = (read-next-object-for-hash-table +right-brace+
+                                                  +comma+
+                                                  stream)
+     collect (if *eval-in-hash-table*
+                 (list (eval key) (eval value))
+               (list key value))
+     into pairs
+     finally (return (make-hash pairs)))))
 
 (set-dispatch-macro-character #\# #\( #'read-left-bracket)
 (set-dispatch-macro-character #\# #\{ #'read-left-brace)
@@ -201,9 +201,9 @@ Example: CL-USER> (list-case '(1 2 3)
   `(let ((len (length ,list)))
      (case len
        ,@(loop for clause in clauses
-	       collect (list (length (car clause)) 
-			     `(destructuring-bind ,(car clause) ,list
-				,@(cdr clause)))))))
+               collect (list (length (car clause)) 
+                             `(destructuring-bind ,(car clause) ,list
+                                ,@(cdr clause)))))))
 
 (defun add (&rest args)
   "Returns the addition of numbers, or concatenation of strings or lists."
@@ -227,20 +227,20 @@ Example: CL-USER> (list-case '(1 2 3)
 (defun list-intersection (l &key (test #'equal))
   ;; key and test-not are not yet implemented
   (cond ((not (cdr l)) (car l))
-	(t (intersection (car l) 
-			 (list-intersection (cdr l) :test test) 
-			 :test test))))
+        (t (intersection (car l) 
+                         (list-intersection (cdr l) :test test) 
+                         :test test))))
 
 (defun read-file (filename)
   "Read and returns the first lisp-object from file filename."
   (with-open-file (f filename :direction :input :if-does-not-exist nil)
-		  (when f (read f))))
+                  (when f (read f))))
 
 (defun write-file (filename lisp-object)
   "Writes the lisp-object to file filename, overwrites if the file already exists."
   (with-open-file (f filename :direction :output :if-does-not-exist :create
-		     :if-exists :supersede)
-		  (format f "~d" lisp-object)))
+                     :if-exists :supersede)
+                  (format f "~d" lisp-object)))
 
 (defun getf-equal (plist indicator)
   "getf using #'equal for comparison"
@@ -270,10 +270,10 @@ Example: CL-USER> (list-case '(1 2 3)
 (defun nilp (list) "Returns nil if the list is not nil." (equal nil list))
 (defun gen-all-cases (sym)
   (if (nilp sym) '(())
-      (let* ((recursed (gen-all-cases (cdr sym)))
-             (with-truth (mapcar (lambda (l) (cons t l)) recursed))
-             (with-nil (mapcar (lambda (l) (cons nil l)) recursed)))
-        (append with-truth with-nil))))
+    (let* ((recursed (gen-all-cases (cdr sym)))
+           (with-truth (mapcar (lambda (l) (cons t l)) recursed))
+           (with-nil (mapcar (lambda (l) (cons nil l)) recursed)))
+      (append with-truth with-nil))))
 
 (defmacro gen-truth-table (symbols expression)
   "Generate truth table of expression. symbols should be a list of all 
