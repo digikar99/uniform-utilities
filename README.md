@@ -7,8 +7,6 @@ I don't think it is good enough yet; therefore, I'm using a personalized name - 
 
 ## 1 Min Overview
 
-A lot of libraries lack a "1 min overview". Here's the 1 min-overview: (In fact, this is the only overview.)
-
 #### Packages and exported functions / macros
 
 _digikar-utilities_
