@@ -24,8 +24,8 @@ _digikar-utilities_
 - write-file
 - read-file
 - getf-equal
-- ormap
-- andmap
+- apply-and
+- apply-or
 
 _digikar-utilities.logic_
 
@@ -106,10 +106,10 @@ The documentation for each of these can be viewed using `(describe ,symbol-name)
     CL-USER> (digikar-utilities:getf-equal '("a" "b" "c" "d") "a")
     "b"
 
-    CL-USER> (digikar-utilities:andmap '(4 5 6 nil))
+    CL-USER> (digikar-utilities:apply-and '(4 5 6 nil))
     nil
 
-    CL-USER> (digikar-utilities:ormap '(4 5 6 nil))
+    CL-USER> (digikar-utilities:apply-or '(4 5 6 nil))
     4
 
     CL-USER> (digikar-utilities:list-intersection '((1 2 3) (2 3) (1 3 5))

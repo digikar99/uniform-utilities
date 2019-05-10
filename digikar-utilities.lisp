@@ -24,8 +24,8 @@
    :read-file
    :write-file
    :getf-equal
-   :andmap
-   :ormap))
+   :apply-and
+   :apply-or))
 
 (in-package :digikar-utilities)
 
@@ -246,17 +246,17 @@ Example: CL-USER> (list-case '(1 2 3)
         when (equal key indicator)
         return value))
 
-(defun andmap (arg-list)
+(defun apply-and (arg-list)
   (every (lambda (x) (and x t)) arg-list))
 
-(defun ormap (arg-list)
+(defun apply-or (arg-list)
   (some (lambda (x) (or x t)) arg-list))
 
 ;; ========================================================================
 
 (defpackage :digikar-utilities.logic
   (:use :common-lisp)
-  (:export :-> :<= :<> :gen-truth-table))
+  (:export :-> :<- :<> :gen-truth-table))
 
 (in-package :digikar-utilities.logic)
 
