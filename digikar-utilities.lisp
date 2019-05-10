@@ -8,7 +8,6 @@
 (defpackage :digikar-utilities
   (:use :common-lisp)
   (:export
-   :nilp
    :make-hash
    :make-vector
    :*eval-in-vector*
@@ -189,8 +188,6 @@ the value at position key in the vector, to value."
 (set-macro-character +right-brace+ 'read-delimiter)
 
 ;; ------------------------------------------------------------------------
-
-(defun nilp (list) "Returns nil if the list is not nil." (equal '() list))
 
 (defmacro list-case (list &rest clauses)
   "Case using different lengths of list.

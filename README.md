@@ -11,7 +11,6 @@ I don't think it is good enough yet; therefore, I'm using a personalized name - 
 
 _digikar-utilities_
 
-- nilp
 - make-hash
 - make--vector
 - join-using
