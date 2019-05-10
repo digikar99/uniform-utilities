@@ -59,11 +59,6 @@ Equivalent of the python delimiter.join function."
                            "~}")
           list/vector))
 
-(defun stringify (str)
-  (if (stringp str) 
-      (concatenate 'string "\"" str "\"")
-    str))
-
 (defmethod print-object ((hash hash-table) out)
   (format out "#{")
   (format out
