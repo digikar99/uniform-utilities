@@ -24,7 +24,9 @@
    :list-intersection
    :read-file
    :write-file
-   :getf-equal))
+   :getf-equal
+   :andmap
+   :ormap))
 
 (in-package :digikar-utilities)
 
@@ -246,6 +248,12 @@ Example: CL-USER> (list-case '(1 2 3)
         for value in (rest plist) by #'cddr
         when (equal key indicator)
         return value))
+
+(defun andmap (arg-list)
+  (every (lambda (x) (and x t)) arg-list))
+
+(defun ormap (arg-list)
+  (some (lambda (x) (or x t)) arg-list))
 
 ;; ========================================================================
 
