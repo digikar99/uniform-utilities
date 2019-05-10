@@ -116,15 +116,8 @@ The documentation for each of these can be viewed using `(describe ,symbol-name)
     (3)
 
     CL-USER> (digikar-utilities.logic:gen-truth-table (a b c) (and a b c))
+    ((T (T T T)) (NIL (T T NIL)) (NIL (T NIL T)) (NIL (T NIL NIL)) (NIL (NIL T T))
+     (NIL (NIL T NIL)) (NIL (NIL NIL T)) (NIL (NIL NIL NIL)))
+    (A B C)
     
-    (A B C) 
-    (T T T) T
-    (T T NIL) NIL
-    (T NIL T) NIL
-    (T NIL NIL) NIL
-    (NIL T T) NIL
-    (NIL T NIL) NIL
-    (NIL NIL T) NIL
-    (NIL NIL NIL) NIL
-    NIL
 ```

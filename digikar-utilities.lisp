@@ -277,9 +277,11 @@ Example: CL-USER> (list-case '(1 2 3)
 the boolean variables present in expr."
   (declare)
   `(let ((all-cases (gen-all-cases (quote ,symbols))))
-     (print (quote ,symbols))
-     (loop for case in all-cases do
-           (print case)
-           (princ (apply (lambda ,symbols ,expression) case)))))
+     (values
+      (loop for case in all-cases
+	    ;; (print case)
+	    collect (cons (apply (lambda ,symbols ,expression) case)
+			  (list case)))
+      ',symbols)))
 
 
