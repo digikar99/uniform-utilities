@@ -26,6 +26,7 @@ _digikar-utilities_
 - prefix-to-infix
 - write-file
 - read-file
+- getf-equal
 
 _digikar-utilities.logic_
 
@@ -102,6 +103,9 @@ The documentation for each of these can be viewed using `(describe ,symbol-name)
 
     CL-USER> (digikar-utilities:read-file "testing")
     (a b c)
+
+    CL-USER> (digikar-utilities:getf-equal '("a" "b" "c" "d") "a")
+    "b"
 
     CL-USER> (digikar-utilities:list-intersection '((1 2 3) (2 3) (1 3 5))
     (3)

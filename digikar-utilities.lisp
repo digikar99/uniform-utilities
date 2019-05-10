@@ -241,6 +241,7 @@ Example: CL-USER> (list-case '(1 2 3)
 		  (format f "~d" lisp-object)))
 
 (defun getf-equal (plist indicator)
+  "getf using #'equal for comparison"
   (loop for key in plist by #'cddr
         for value in (rest plist) by #'cddr
         when (equal key indicator)
