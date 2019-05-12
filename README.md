@@ -106,17 +106,8 @@ The documentation for each of these can be viewed using `(describe ,symbol-name)
     CL-USER> (digikar-utilities:getf-equal '("a" "b" "c" "d") "a")
     "b"
 
-    CL-USER> (digikar-utilities:apply-and '(4 5 6 nil))
-    nil
-
-    CL-USER> (digikar-utilities:apply-or '(4 5 6 nil))
-    4
-
     CL-USER> (digikar-utilities:replace-all "hello" "l" "a")
     "heaao"
-
-    CL-USER> (digikar-utilities:list-intersection '((1 2 3) (2 3) (1 3 5))
-    (3)
 
     CL-USER> (digikar-utilities.logic:gen-truth-table (a b c) (and a b c))
     ((T (T T T)) (NIL (T T NIL)) (NIL (T NIL T)) (NIL (T NIL NIL)) (NIL (NIL T T))

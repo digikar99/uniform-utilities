@@ -20,12 +20,9 @@
    :nand
    :nor
    :prefix-to-infix
-   :list-intersection
    :read-file
    :write-file
    :getf-equal
-   :apply-and
-   :apply-or
    :replace-all))
 
 (in-package :digikar-utilities)
@@ -217,13 +214,6 @@ Example: CL-USER> (list-case '(1 2 3)
                       collect (list (car expr)
                                     (prefix-to-infix var)))))))
 
-(defun list-intersection (l &key (test #'equal))
-  ;; key and test-not are not yet implemented
-  (cond ((not (cdr l)) (car l))
-        (t (intersection (car l) 
-                         (list-intersection (cdr l) :test test) 
-                         :test test))))
-
 (defun read-file (filename)
   "Read and returns the first lisp-object from file filename."
   (with-open-file (f filename :direction :input :if-does-not-exist nil)
@@ -241,12 +231,6 @@ Example: CL-USER> (list-case '(1 2 3)
         for value in (rest plist) by #'cddr
         when (equal key indicator)
         return value))
-
-(defun apply-and (arg-list)
-  (every (lambda (x) (and x t)) arg-list))
-
-(defun apply-or (arg-list)
-  (some (lambda (x) (or x t)) arg-list))
 
 (defun replace-all (string part replacement &key (test #'char=))
   "Returns a new string in which all the occurences of the part 
