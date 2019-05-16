@@ -66,10 +66,10 @@ The documentation for each of these can be viewed using `(describe ,symbol-name)
     "aa b"
 
     CL-USER> (digikar-utilities:make-hash '(("a" 1) (5 25)))
-    #{"a" 1, 5 25}
+    #<HASH-TABLE :TEST EQUAL :COUNT 2 {1003B1AD33}>
 
     CL-USER> (setq b #{"b" 1, 5 "five", "5+6" (+ 5 6), 'a 7, 'myvar myvar})
-    #{"b" 1, 5 "five", "5+6" 11, A 7, MYVAR 555}
+    #<HASH-TABLE :TEST EQUAL :COUNT 5 {1003B18ED3}>
 
     CL-USER> (get-val a 0) ; also works for hash-tables
     4
@@ -78,7 +78,7 @@ The documentation for each of these can be viewed using `(describe ,symbol-name)
     3
 
     CL-USER> #{"one" #{1 2}} ; other combinations also work
-    #{"one" #{1 2}}
+    #<HASH-TABLE :TEST EQUAL :COUNT 1 {1003B1E513}>
 
     CL-USER> (digikar-utilities:list-case '(1 2 3)
                                           ((x y) (+ x y))

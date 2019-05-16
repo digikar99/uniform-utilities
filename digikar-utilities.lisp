@@ -57,28 +57,9 @@ Equivalent of the python delimiter.join function."
                            "~}")
           list/vector))
 
-(defmethod print-object ((hash hash-table) out)
-  (format out "#{")
-  (format out
-          (join-using ", "
-                      (loop for key being the hash-keys of hash
-                            for val being the hash-values of hash
-                            collect (join-using " "
-                                                (list (write-to-string key)
-                                                      (write-to-string val))))))
-  (format out "}"))
-
 (defun make-vector (list)
   "Converts list to vector."
   (apply #'vector list))
-
-;; Redefining print-object for vectors is a (lot?) more work than
-;; just the below function, since even strings are vectors.
-;; (defmethod print-object ((vec vector) out)
-;;   (format out (concatenate 'string
-;;                            "["
-;;                            (join-using " " vec)
-;;                            "]")))
 
 (defun get-val (vec/hash key)
   "Get the value associated with key in the hash-table, or 
