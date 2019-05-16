@@ -29,18 +29,20 @@
 
 ;; the following function needs to be defined before the
 ;; +format-delimiters+ constant, for obvious reasons.
-(defun make-hash (pairs)
-  "Takes input in the form '((1 2) (3 4)) and returns a hash-table
+(eval-when (:compile-toplevel :execute :load-toplevel)
+  (defun make-hash (pairs)
+    "Takes input in the form '((1 2) (3 4)) and returns a hash-table
 with the mapping 1=>2 and 3=>4."
-  (if (hash-table-p pairs)
-      pairs ; to take care of the reader macro syntax confusion defined below
-    (let ((hash-table (make-hash-table :test 'equal)))
-      (loop for (key val) in pairs do
-            (setf (gethash key hash-table) val))
-      hash-table)))
+    (if (hash-table-p pairs)
+	pairs ; to take care of the reader macro syntax confusion defined below
+      (let ((hash-table (make-hash-table :test 'equal)))
+	(loop for (key val) in pairs do
+	      (setf (gethash key hash-table) val))
+	hash-table))))
 
-(defvar +format-delimiters+
-  (make-hash '(("\n" "~%"))))
+(eval-when (:compile-toplevel)
+  (defconstant +format-delimiters+
+    (make-hash '(("\n" "~%")))))
 (defun get-format-delimiters (delimiter)
   "format uses some seemingly obscure delimiters, such as ~% instead of \n."
   (let ((format-delimiter (gethash delimiter +format-delimiters+)))
