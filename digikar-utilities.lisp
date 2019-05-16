@@ -158,7 +158,6 @@ the value at position key in the vector, to value."
 
 (set-dispatch-macro-character #\# #\( #'read-left-bracket)
 (set-dispatch-macro-character #\# #\{ #'read-left-brace)
-(set-macro-character +right-bracket+ 'read-delimiter)
 (set-macro-character +right-brace+ 'read-delimiter)
 
 ;; ------------------------------------------------------------------------
