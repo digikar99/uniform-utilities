@@ -107,7 +107,7 @@ the value at position key in the vector, to value."
           nil)
       (read input-stream t nil t))))
 
-(defvar *eval-in-vector* t
+(defvar *eval-in-vector* nil
   "If true #(a b) can be read as #(1 2), where a=1 and b=2; else as #(a b).")
 
 (defun read-left-bracket (stream char n)
@@ -135,7 +135,7 @@ the value at position key in the vector, to value."
          ((and delimiter (char= next-char delimiter)) nil))
         object))))
 
-(defvar *eval-in-hash-table* t
+(defvar *eval-in-hash-table* nil
   "If true #{a b} can be read as #{1 2}, where a=1 and b=2; else as #{a b}.")
 
 (defun read-left-brace (stream char n)
