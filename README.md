@@ -24,15 +24,14 @@ _digikar-utilities_
 - write-file
 - read-file
 - getf-equal
-- apply-and
-- apply-or
+- copy-instance
 
 _digikar-utilities.logic_
 
 - ->
 - <-
 - <>
-- gen-truth-table
+- gen-truth-tableq
 
 The documentation for each of these can be viewed using `(describe ,symbol-name)`. (Eg. `(describe 'join-using)`.) 
 
@@ -108,6 +107,12 @@ The documentation for each of these can be viewed using `(describe ,symbol-name)
 
     CL-USER> (digikar-utilities:replace-all "hello" "l" "a")
     "heaao"
+
+    CL-USER> (defclass foo () ())
+    #<STANDARD-CLASS COMMON-LISP-USER::FOO>
+
+    CL-USER> (digikar-utilities:copy-instance (make-instance 'foo))
+    #<FOO {1001F93E73}>
 
     CL-USER> (digikar-utilities.logic:gen-truth-table (a b c) (and a b c))
     ((T (T T T)) (NIL (T T NIL)) (NIL (T NIL T)) (NIL (T NIL NIL)) (NIL (NIL T T))
