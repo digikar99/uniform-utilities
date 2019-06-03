@@ -10,8 +10,6 @@
   (:export
    :make-hash
    :make-vector
-   :*eval-in-vector*
-   :*eval-in-hash-table*
    :join-using
    :list-case
    :get-val
@@ -37,7 +35,7 @@ with the mapping 1=>2 and 3=>4."
       pairs ; to take care of the reader macro syntax confusion defined below
     (let ((hash-table (make-hash-table :test 'equal)))
       (loop for (key val) in pairs do
-	    (setf (gethash key hash-table) val))
+            (setf (gethash key hash-table) val))
       hash-table)))
 
 (defvar +format-delimiters+
@@ -83,21 +81,16 @@ the value at position key in the vector, to value."
 ;; It has been modified since then.
 
 (defconstant +hash+ #\#)
-(defconstant +left-bracket+ #\()
-(defconstant +right-bracket+ #\))
+(defconstant +left-square+ #\[)
+(defconstant +right-square+ #\])
 (defconstant +left-brace+ #\{)
 (defconstant +right-brace+ #\})
-(defconstant +comma+ #\,) ;; separator in hash-tables
-
-(defun read-separator (stream char)
-  (declare (ignore stream))
-  (error "Separator ~S shouldn't be read alone" char))
 
 (defun read-delimiter (stream char)
   (declare (ignore stream))
   (error "Delimiter ~S shouldn't be read alone" char))
 
-(defun read-next-object-for-vector
+(defun read-next-object
     (delimiter &optional (input-stream *standard-input*))
   (flet ((peek-next-char () (peek-char t input-stream t nil t))
          (discard-next-char () (read-char input-stream t nil t)))
@@ -107,59 +100,53 @@ the value at position key in the vector, to value."
           nil)
       (read input-stream t nil t))))
 
-(defvar *eval-in-vector* nil
-  "If true #(a b) can be read as #(1 2), where a=1 and b=2; else as #(a b).")
-
-(defun read-left-bracket (stream char n)
+(defun read-vector (stream char n)
   (declare (ignore char))
-  (declare (ignore n))
-  (let ((*readtable* (copy-readtable)))
+  (let ((eval n))
     (loop
-     for object = (read-next-object-for-vector +right-bracket+ stream)
-     while object
-       collect (if *eval-in-vector* (eval object) object) into objects
-     finally (return (make-vector objects)))))
+       for object = (read-next-object +right-square+ stream)
+       while object
+       collect object
+       into objects
+       finally (return (if eval
+                           `(make-vector (list ,@objects))
+                           `(make-vector ',objects))))))
 
-(defun read-next-object-for-hash-table
-    (delimiter separator &optional (input-stream *standard-input*))
-  (flet ((peek-next-char () (peek-char t input-stream t nil t))
-         (discard-next-char () (read-char input-stream t nil t)))
-    (if (and delimiter (char= (peek-next-char) delimiter))
-        (progn
-          (discard-next-char)
-          nil)
-      (let* ((object (read input-stream t nil t))
-             (next-char (peek-next-char)))
-        (cond
-         ((char= next-char separator) (discard-next-char))
-         ((and delimiter (char= next-char delimiter)) nil))
-        object))))
+;; OBSERVATION: The following doesn't work as expected.
+;; (Originally, the decision to eval was determined by an *eval-in-<type>*
+;;  global variable as below.)
+;; (let* ((*eval-in-hash-table* t)
+;;        (a 2))
+;;   #{a "2"}) 
+;; PROPOSITION: Merely declaiming / declaring this as special won't work,
+;; because read-expansion happens before the value of *eval* is changed.
+;; POSSIBLE SOLUTION: Use the value of n to indicate whether to eval.
+;; Further, for safety purposes, eliminate eval altogether.
 
-(defvar *eval-in-hash-table* nil
-  "If true #{a b} can be read as #{1 2}, where a=1 and b=2; else as #{a b}.")
-
-(defun read-left-brace (stream char n)
+(defun read-hash-table (stream char n)
   (declare (ignore char))
-  (declare (ignore n))
-  (let ((*readtable* (copy-readtable)))
-    (set-macro-character +comma+ 'read-separator)
+  (let ((eval n))
     (loop
-     for key = (read-next-object-for-hash-table +right-brace+
-                                                +comma+
-                                                stream)
-     while key
-     for value = (read-next-object-for-hash-table +right-brace+
-                                                  +comma+
-                                                  stream)
-     collect (if *eval-in-hash-table*
-                 (list (eval key) (eval value))
-               (list key value))
-     into pairs
-     finally (return (make-hash pairs)))))
+       for key = (read-next-object +right-brace+ stream)
+       while key
+       for value = (read-next-object +right-brace+ stream)
+       while value
+       for pair =
+         (if eval `(list ,key ,value) (list key value))
+       collect pair into pairs
+       ;; do
+         ;; (format t "*eval-in-hash-table*: ~d~%" *eval-in-hash-table*)
+         ;; (format t "Pair: ~d~%" pair)
+       finally
+         (return (if eval
+                     `(make-hash (list ,@pairs))
+                     `(make-hash ',pairs))))))
 
-(set-dispatch-macro-character #\# #\( #'read-left-bracket)
-(set-dispatch-macro-character #\# #\{ #'read-left-brace)
+(set-dispatch-macro-character #\# #\{ #'read-hash-table)
+(set-dispatch-macro-character #\# #\[ #'read-vector)
 (set-macro-character +right-brace+ 'read-delimiter)
+(set-macro-character +right-square+ 'read-delimiter)
+
 
 ;; ------------------------------------------------------------------------
 
@@ -274,9 +261,9 @@ the boolean variables present in expr."
   `(let ((all-cases (gen-all-cases (quote ,symbols))))
      (values
       (loop for case in all-cases
-	    ;; (print case)
-	    collect (cons (apply (lambda ,symbols ,expression) case)
-			  (list case)))
+            ;; (print case)
+            collect (cons (apply (lambda ,symbols ,expression) case)
+                          (list case)))
       ',symbols)))
 
 

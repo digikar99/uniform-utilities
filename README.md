@@ -1,6 +1,8 @@
 
 ## Background and Introduction
 
+WARNING: This will modify your read-table.
+
 This is yet another utility library for common lisp. (Several libraries can be found at [cliki](https://cliki.net/utilities). Notable ones besides those include  [Alexandria](http://common-lisp.net/project/alexandria/) and [cl21](https://lispcookbook.github.io/cl-cookbook/cl21.html). There's also [a good discussion on reddit about "fixing" common lisp](https://www.reddit.com/r/lisp/comments/6t6fqs/which_sugared_library_do_common_lispers_prefer/).
 
 I don't think it is good enough yet; therefore, I'm using a personalized name - in case someone comes up with a "God" level library, let them use a good name. (Learnt over reddit that one should give a good name, only after it is proven to be good. And it is reasonable: we don't want to waste good names. :p)
@@ -39,46 +41,40 @@ The documentation for each of these can be viewed using `(describe ,symbol-name)
 
 
 ```lisp
-    CL-USER> (load "digikar-utilities.lisp")
-    ;; some warnings
-    T
+    CL-USER> (ql:quickload 'digikar-utilities)
+    (DIGIKAR-UTILITIES)
 
     CL-USER> (digikar-utilities:make-vector '(1 2 3))
     #(1 2 3)
 
-    CL-USER> (setq myvar 555)
-    555
-
-    CL-USER> #(a b)
-    #(a b)
-
-    CL-USER> (setq *eval-in-vector* t) ;; also *eval-in-hash-table*
-    ;; however, also note that this does not work in progn
-    t
-
-    CL-USER> (setq a #(4 5 'a myvar))
-    #(4 5 A 555)
-    
-    CL-USER> (setq *eval-in-vector* nil)
-    NIL
-
-    CL-USER> (digikar-utilities:join-using " " '("aa" "b")) ; also works with vectors
-    "aa b"
-
     CL-USER> (digikar-utilities:make-hash '(("a" 1) (5 25)))
     #<HASH-TABLE :TEST EQUAL :COUNT 2 {1003B1AD33}>
 
-    CL-USER> (setq b #{"b" 1, 5 "five", "5+6" (+ 5 6), 'a 7, 'myvar myvar})
-    #<HASH-TABLE :TEST EQUAL :COUNT 5 {1003B18ED3}>
+    CL-USER> (setq myvar 555)
+    555
 
-    CL-USER> (get-val a 0) ; also works for hash-tables
-    4
+    CL-USER> #[myvar]
+    #(myvar) ;; changing this print-object is non-trivial with my knowledge.
 
-    CL-USER> (set-val b '(+ 1 2) 3) ; also works for vectors
+    CL-USER> #1[myvar] ; any number between '#' and '[' would do
+    #(555) 
+    ;; While it is possible to do this by using a state variable,
+    ;; since this expansion happens at read-time, it does not work
+    ;; for forms like let and progn.
+
+    CL-USER> (setq nested #1[4                 ; currently, there is no
+                             #2{'a #9[5        ; indentation support
+                                      6]}])    ; be careful about what to eval
+    #(4 #<HASH-TABLE :TEST EQUAL :COUNT 1 {1002002CF3}>)
+    
+    CL-USER> (digikar-utilities:join-using " " '("aa" "b")) ; also works with vectors
+    "aa b"
+
+    CL-USER> (get-val (get-val nested 1) 'a) ; uniform syntax for 
+    #(5 6)                                   ; both hash-tables and vectors
+
+    CL-USER> (set-val nested 1 (+ 1 2))
     3
-
-    CL-USER> #{"one" #{1 2}} ; other combinations also work
-    #<HASH-TABLE :TEST EQUAL :COUNT 1 {1003B1E513}>
 
     CL-USER> (digikar-utilities:list-case '(1 2 3)
                                           ((x y) (+ x y))
