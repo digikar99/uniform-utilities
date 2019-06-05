@@ -3,8 +3,6 @@
 ;; These features include:
 ;; - easier usage of vectors and hash-tables
 
-;; eval has been used in read-left-brace and read-left-bracket
-
 (defpackage :digikar-utilities
   (:use :common-lisp)
   (:export
@@ -60,12 +58,26 @@ Equivalent of the python delimiter.join function."
   "Converts list to vector."
   (apply #'vector list))
 
-(defun get-val (vec/hash key)
-  "Get the value associated with key in the hash-table, or 
-the value at position key in the vector."
-  (cond ((vectorp vec/hash) (aref vec/hash key))
-        ((hash-table-p vec/hash) (gethash key vec/hash))
-        (t (error "Expected vector or hash-table"))))
+(defmacro get-val (object key &optional intended-type-of-object)
+  "Get the value associated with KEY in OBJECT.
+Optionally, expand the code according to INTENDED-TYPE-OF-OBJECT"
+  (if intended-type-of-object
+      (progn
+	(setq intended-type-of-object (cadr intended-type-of-object))
+	(case intended-type-of-object
+	  (hash-table `(gethash ,key ,object))
+	  (sequence `(elt ,object ,key))
+	  (simple-vector `(svref ,object ,key))
+	  (vector `(aref ,object ,key))
+	  (array `(aref ,object ,key))
+	  (string `(char ,object ,key))
+	  (list `(nth ,object ,key))))
+      `(cond ((vectorp ,object) (aref ,object ,key))
+	     ((hash-table-p ,object) (gethash ,key ,object))
+	     (t
+	      (error (format nil
+			     "Type of ~d cannot be inferred"
+			     ,object))))))
 
 (defun set-val (vec/hash key value)
   "Set the value (destructive) associated with key in the hash-table, or 
@@ -115,7 +127,7 @@ the value at position key in the vector, to value."
      for object = (read-next-object +right-square+ stream)
      while object
      collect object into objects
-     finally (return `(make-vector ',objects))))
+     finally (return (make-vector objects))))
 
 ;; OBSERVATION: The following doesn't work as expected.
 ;; (Originally, the decision to eval was determined by an *eval-in-<type>*
