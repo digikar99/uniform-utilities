@@ -53,28 +53,35 @@ The documentation for each of these can be viewed using `(describe ,symbol-name)
     CL-USER> (setq myvar 555)
     555
 
-    CL-USER> #[myvar]
-    #(myvar) ;; changing this print-object is non-trivial with my knowledge.
+    CL-USER> [myvar]
+    #(MYVAR) ;; changing this print-object is non-trivial with my knowledge.
 
-    CL-USER> #1[myvar] ; any number between '#' and '[' would do
+    CL-USER> (get-val {myvar "myvar"} 'myvar)
+    "myvar"
+    T
+    ;; while a print-object function can be defined for hash-tables, and was 
+    ;; included previously, it can clutter up the screen when the hash-table 
+    ;; is large.
+
+    CL-USER> #[myvar] ;; also for hash-tables
     #(555) 
     ;; While it is possible to do this by using a state variable,
     ;; since this expansion happens at read-time, it does not work
     ;; for forms like let and progn.
 
-    CL-USER> (setq nested #1[4                 ; currently, there is no
-                             #2{'a #9[5        ; indentation support
-                                      6]}])    ; be careful about what to eval
+    CL-USER> (setq nested #[4                 ; Currently, there is no
+                            #{'a [5 6]}])     ; indentation support
+    ;; Also, be careful about what to eval
     #(4 #<HASH-TABLE :TEST EQUAL :COUNT 1 {1002002CF3}>)
     
-    CL-USER> (digikar-utilities:join-using " " '("aa" "b")) ; also works with vectors
-    "aa b"
-
     CL-USER> (get-val (get-val nested 1) 'a) ; uniform syntax for 
     #(5 6)                                   ; both hash-tables and vectors
 
     CL-USER> (set-val nested 1 (+ 1 2))
     3
+
+    CL-USER> (digikar-utilities:join-using " " '("aa" "b")) ; also works with vectors
+    "aa b"
 
     CL-USER> (digikar-utilities:list-case '(1 2 3)
                                           ((x y) (+ x y))

@@ -102,15 +102,20 @@ the value at position key in the vector, to value."
 
 (defun read-vector (stream char n)
   (declare (ignore char))
-  (let ((eval n))
-    (loop
-       for object = (read-next-object +right-square+ stream)
-       while object
-       collect object
-       into objects
-       finally (return (if eval
-                           `(make-vector (list ,@objects))
-                           `(make-vector ',objects))))))
+  (declare (ignore n))
+  (loop
+     for object = (read-next-object +right-square+ stream)
+     while object
+     collect object into objects
+     finally (return `(make-vector (list ,@objects)))))
+
+(defun read-vector-literally (stream char)
+  (declare (ignore char))
+  (loop
+     for object = (read-next-object +right-square+ stream)
+     while object
+     collect object into objects
+     finally (return `(make-vector ',objects))))
 
 ;; OBSERVATION: The following doesn't work as expected.
 ;; (Originally, the decision to eval was determined by an *eval-in-<type>*
@@ -125,25 +130,33 @@ the value at position key in the vector, to value."
 
 (defun read-hash-table (stream char n)
   (declare (ignore char))
-  (let ((eval n))
-    (loop
+  (declare (ignore n))
+  (loop
        for key = (read-next-object +right-brace+ stream)
        while key
        for value = (read-next-object +right-brace+ stream)
        while value
-       for pair =
-         (if eval `(list ,key ,value) (list key value))
+       for pair = `(list ,key ,value)
        collect pair into pairs
-       ;; do
-         ;; (format t "*eval-in-hash-table*: ~d~%" *eval-in-hash-table*)
-         ;; (format t "Pair: ~d~%" pair)
        finally
-         (return (if eval
-                     `(make-hash (list ,@pairs))
-                     `(make-hash ',pairs))))))
+         (return `(make-hash (list ,@pairs)))))
+
+(defun read-hash-table-literally (stream char)
+  (declare (ignore char))
+  (loop
+       for key = (read-next-object +right-brace+ stream)
+       while key
+       for value = (read-next-object +right-brace+ stream)
+       while value
+       for pair = (list key value)
+       collect pair into pairs
+       finally
+         (return `(make-hash ',pairs))))
 
 (set-dispatch-macro-character #\# #\{ #'read-hash-table)
 (set-dispatch-macro-character #\# #\[ #'read-vector)
+(set-macro-character #\{ #'read-hash-table-literally)
+(set-macro-character #\[ #'read-vector-literally)
 (set-macro-character +right-brace+ 'read-delimiter)
 (set-macro-character +right-square+ 'read-delimiter)
 
