@@ -68,7 +68,7 @@ Equivalent of the python delimiter.join function."
 ;; 	     do (get-val vec 0))))
 ;;
 ;; The CL21:GETF is much worse.
-(defmacro get-val (object key intended-type-of-object)
+(defmacro get-val (object key &optional intended-type-of-object)
   "Get the value associated with KEY in OBJECT.
 Optionally, expand the code according to INTENDED-TYPE-OF-OBJECT.
 Pass the indexes as a list in case of an array."
@@ -82,22 +82,37 @@ Pass the indexes as a list in case of an array."
 	  (vector `(aref ,object ,key))
 	  (array `(apply #'aref ,object ,key))
 	  (string `(char ,object ,key))
-	  (list `(nth ,object ,key))))
+	  (list `(nth ,key ,object))))
       `(cond ((vectorp ,object) (aref ,object ,key))
 	     ((hash-table-p ,object) (gethash ,key ,object))
 	     ((arrayp ,object) (apply #'aref ,object ,key))
-	     ((listp ,object) (nth ,object ,key))
+	     ((listp ,object) (nth ,key ,object))
 	     (t
 	      (error (format nil
 			     "Type of ~d cannot be inferred"
 			     ,object))))))
 
-(defun set-val (vec/hash key value)
-  "Set the value (destructive) associated with key in the hash-table, or 
-the value at position key in the vector, to value."
-  (cond ((vectorp vec/hash) (setf (aref vec/hash key) value))
-        ((hash-table-p vec/hash) (setf (gethash key vec/hash) value))
-        (t (error "Expected vector or hash-table"))))
+(defun set-val (object key value &optional intended-type-of-object)
+  "Set the value associated with KEY in OBJECT to VALUE. (is destructive)
+Optionally, expand the code according to INTENDED-TYPE-OF-OBJECT.
+Pass the indexes as a list in case of an array."
+  (unless intended-type-of-object
+    (setq intended-type-of-object
+	  (typecase object
+	    (vector 'vector)
+	    (hash-table 'hash-table)
+	    (array 'array)
+	    (list 'list))))
+  (case intended-type-of-object
+    (vector (setf (aref object key) value))
+    (hash-table (setf (gethash key object) value))
+    (array (setf (apply #'aref object key) value))
+    (list (setf (nth key object) value))
+    (t
+     (error (format nil
+		    "set-val for ~d is not implemented"
+		    (type-of object)))))
+  object)
 
 ;; ==========================================================================
 ;; The following code for json-like reader macros was originally found at:
