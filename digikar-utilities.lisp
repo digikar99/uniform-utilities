@@ -58,9 +58,20 @@ Equivalent of the python delimiter.join function."
   "Converts list to vector."
   (apply #'vector list))
 
-(defmacro get-val (object key &optional intended-type-of-object)
+
+;; While possible to implement get-val as a function, generic or otherwise,
+;; a brief testing with TIME suggests that the macro implementation is the most
+;; performance - as much as the bare-bones, if the type is specified.
+;;
+;; (let ((vec [1 2]))
+;;   (time (loop for i below 1e7
+;; 	     do (get-val vec 0))))
+;;
+;; The CL21:GETF is much worse.
+(defmacro get-val (object key intended-type-of-object)
   "Get the value associated with KEY in OBJECT.
-Optionally, expand the code according to INTENDED-TYPE-OF-OBJECT"
+Optionally, expand the code according to INTENDED-TYPE-OF-OBJECT.
+Pass the indexes as a list in case of an array."
   (if intended-type-of-object
       (progn
 	(setq intended-type-of-object (cadr intended-type-of-object))
@@ -69,11 +80,13 @@ Optionally, expand the code according to INTENDED-TYPE-OF-OBJECT"
 	  (sequence `(elt ,object ,key))
 	  (simple-vector `(svref ,object ,key))
 	  (vector `(aref ,object ,key))
-	  (array `(aref ,object ,key))
+	  (array `(apply #'aref ,object ,key))
 	  (string `(char ,object ,key))
 	  (list `(nth ,object ,key))))
       `(cond ((vectorp ,object) (aref ,object ,key))
 	     ((hash-table-p ,object) (gethash ,key ,object))
+	     ((arrayp ,object) (apply #'aref ,object ,key))
+	     ((listp ,object) (nth ,object ,key))
 	     (t
 	      (error (format nil
 			     "Type of ~d cannot be inferred"
