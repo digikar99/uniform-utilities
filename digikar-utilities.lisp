@@ -11,6 +11,7 @@
    :join-using
    :list-case
    :get-val
+   :get-valf
    :set-val
    :add
    :nand
@@ -68,29 +69,46 @@ Equivalent of the python delimiter.join function."
 ;; 	     do (get-val vec 0))))
 ;;
 ;; The CL21:GETF is much worse.
-(defmacro get-val (object key &optional intended-type-of-object)
+(defun get-val (object key &optional intended-type-of-object)
   "Get the value associated with KEY in OBJECT.
 Optionally, expand the code according to INTENDED-TYPE-OF-OBJECT.
 Pass the indexes as a list in case of an array."
   (if intended-type-of-object
-      (progn
-	(setq intended-type-of-object (cadr intended-type-of-object))
-	(case intended-type-of-object
-	  (hash-table `(gethash ,key ,object))
-	  (sequence `(elt ,object ,key))
-	  (simple-vector `(svref ,object ,key))
-	  (vector `(aref ,object ,key))
-	  (array `(apply #'aref ,object ,key))
-	  (string `(char ,object ,key))
-	  (list `(nth ,key ,object))))
-      `(cond ((vectorp ,object) (aref ,object ,key))
-	     ((hash-table-p ,object) (gethash ,key ,object))
-	     ((arrayp ,object) (apply #'aref ,object ,key))
-	     ((listp ,object) (nth ,key ,object))
+      (ecase intended-type-of-object
+	  (hash-table (gethash key object))
+	  (sequence (elt object key))
+	  (simple-vector (svref object key))
+	  (vector (aref object key))
+	  (array (apply #'aref object key))
+	  (string (char object key))
+	  (list (nth key object)))
+      (cond ((vectorp object) (aref object key))
+	     ((hash-table-p object) (gethash key object))
+	     ((arrayp object) (apply #'aref object key))
+	     ((listp object) (nth key object))
 	     (t
 	      (error (format nil
 			     "Type of ~d cannot be inferred"
-			     ,object))))))
+			     object))))))
+
+(define-compiler-macro get-val (&whole form object key &optional intended-type-of-object)
+  "Get the value associated with KEY in OBJECT.
+Optionally, expand the code according to INTENDED-TYPE-OF-OBJECT.
+Pass the indexes as a list in case of an array."
+  (if intended-type-of-object
+      (alexandria:switch
+       (intended-type-of-object :test 'equalp)
+       (''hash-table `(gethash ,key ,object))
+       (''sequence `(elt ,object ,key))
+       (''simple-vector `(svref ,object ,key))
+       (''vector `(aref ,object ,key))
+       (''array `(apply #'aref ,object ,key))
+       (''string `(char ,object ,key))
+       (''list `(nth ,key ,object))
+       (t form))
+      form))
+
+
 
 (defun set-val (object key value &optional intended-type-of-object)
   "Set the value associated with KEY in OBJECT to VALUE. (is destructive)
@@ -113,6 +131,27 @@ Pass the indexes as a list in case of an array."
 		    "set-val for ~d is not implemented"
 		    (type-of object)))))
   object)
+
+;; (defmacro slice (object &optional start end interval &key type)
+;;   (if type
+;;       (progn
+;; 	(setq intended-type-of-object (cadr intended-type-of-object))
+;; 	(case intended-type-of-object
+;; 	  (hash-table `(gethash ,key ,object))
+;; 	  (sequence `(elt ,object ,key))
+;; 	  (simple-vector `(svref ,object ,key))
+;; 	  (vector `(aref ,object ,key))
+;; 	  (array `(apply #'aref ,object ,key))
+;; 	  (string `(char ,object ,key))
+;; 	  (list `(nth ,key ,object))))
+;;       `(cond ((vectorp ,object) (aref ,object ,key))
+;; 	     ((hash-table-p ,object) (gethash ,key ,object))
+;; 	     ((arrayp ,object) (apply #'aref ,object ,key))
+;; 	     ((listp ,object) (nth ,key ,object))
+;; 	     (t
+;; 	      (error (format nil
+;; 			     "Type of ~d cannot be inferred"
+;; 			     ,object))))))
 
 ;; ==========================================================================
 ;; The following code for json-like reader macros was originally found at:
