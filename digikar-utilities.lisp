@@ -11,8 +11,6 @@
    :join-using
    :list-case
    :get-val
-   :get-valf
-   :set-val
    :add
    :nand
    :nor
@@ -71,32 +69,29 @@ Equivalent of the python delimiter.join function."
 ;; The CL21:GETF is much worse.
 (defun get-val (object key &optional intended-type-of-object)
   "Get the value associated with KEY in OBJECT.
-Optionally, expand the code according to INTENDED-TYPE-OF-OBJECT.
+Optionally, specify the type of OBJECT in INTENDED-TYPE-OF-OBJECT.
 Pass the indexes as a list in case of an array."
-  (if intended-type-of-object
-      (ecase intended-type-of-object
+  (unless intended-type-of-object
+    (setq intended-type-of-object
+	  (etypecase object
+	    (vector 'vector)
+	    (hash-table 'hash-table)
+	    (array 'array)
+	    (list 'list))))
+  (ecase intended-type-of-object
 	  (hash-table (gethash key object))
 	  (sequence (elt object key))
 	  (simple-vector (svref object key))
 	  (vector (aref object key))
 	  (array (apply #'aref object key))
 	  (string (char object key))
-	  (list (nth key object)))
-      (cond ((vectorp object) (aref object key))
-	     ((hash-table-p object) (gethash key object))
-	     ((arrayp object) (apply #'aref object key))
-	     ((listp object) (nth key object))
-	     (t
-	      (error (format nil
-			     "Type of ~d cannot be inferred"
-			     object))))))
+	  (list (nth key object))))
 
 (define-compiler-macro get-val (&whole form object key &optional intended-type-of-object)
   "Get the value associated with KEY in OBJECT.
-Optionally, expand the code according to INTENDED-TYPE-OF-OBJECT.
+Optionally, specify the type of OBJECT in INTENDED-TYPE-OF-OBJECT.
 Pass the indexes as a list in case of an array."
-  (if intended-type-of-object
-      (alexandria:switch
+  (alexandria:switch
        (intended-type-of-object :test 'equalp)
        (''hash-table `(gethash ,key ,object))
        (''sequence `(elt ,object ,key))
@@ -105,32 +100,43 @@ Pass the indexes as a list in case of an array."
        (''array `(apply #'aref ,object ,key))
        (''string `(char ,object ,key))
        (''list `(nth ,key ,object))
-       (t form))
-      form))
+       (t form)))
 
-
-
-(defun set-val (object key value &optional intended-type-of-object)
+(defun (setf get-val) (value object key &optional intended-type-of-object)
   "Set the value associated with KEY in OBJECT to VALUE. (is destructive)
-Optionally, expand the code according to INTENDED-TYPE-OF-OBJECT.
+Optionally, specify the type of OBJECT in INTENDED-TYPE-OF-OBJECT.
 Pass the indexes as a list in case of an array."
   (unless intended-type-of-object
     (setq intended-type-of-object
-	  (typecase object
+	  (etypecase object
 	    (vector 'vector)
 	    (hash-table 'hash-table)
 	    (array 'array)
 	    (list 'list))))
-  (case intended-type-of-object
-    (vector (setf (aref object key) value))
-    (hash-table (setf (gethash key object) value))
-    (array (setf (apply #'aref object key) value))
-    (list (setf (nth key object) value))
-    (t
-     (error (format nil
-		    "set-val for ~d is not implemented"
-		    (type-of object)))))
-  object)
+  (ecase intended-type-of-object
+      (hash-table (setf (gethash key object) value))
+      (sequence (setf (elt object key) value))
+      (simple-vector (setf (svref object key) value))
+      (vector (setf (aref object key) value))
+      (array (setf (apply #'aref object key) value))
+      (string (setf (char object key) value))
+      (list (setf (nth key object) value))))
+
+(define-compiler-macro (setf get-val)
+        (&whole form value object key &optional intended-type-of-object)
+  "Set the value associated with KEY in OBJECT to VALUE. (is destructive)
+Optionally, specify the type of OBJECT in INTENDED-TYPE-OF-OBJECT.
+Pass the indexes as a list in case of an array."
+  (alexandria:switch
+   (intended-type-of-object :test 'equalp)
+   (''hash-table `(setf (gethash ,key ,object) ,value))
+   (''sequence `(setf (elt ,object ,key) ,value))
+   (''simple-vector `(setf (svref ,object ,key) ,value))
+   (''vector `(setf (aref ,object ,key) ,value))
+   (''array `(setf (apply #'aref ,object ,key) ,value))
+   (''string `(setf (char ,object ,key) ,value))
+   (''list `(setf (nth ,key ,object) ,value))
+   (t form)))
 
 ;; (defmacro slice (object &optional start end interval &key type)
 ;;   (if type
