@@ -11,8 +11,6 @@
    :get-val
    :join-strings-using
    :list-case
-   :nand
-   :nor
    :prefix-to-infix
    :read-file
    :write-file
@@ -245,9 +243,6 @@ Example: CL-USER> (list-case '(1 2 3)
                                 ,@(cdr clause)))))))
 
 
-(defmacro nand (&rest args) `(not (and ,@args)))
-(defmacro nor (&rest args) `(not (or ,@args)))
-
 (defun prefix-to-infix (expr)
   (cond ((or (not (listp expr))
              (equal 'not (car expr))) expr)
@@ -313,17 +308,25 @@ is replaced with replacement. Credits: Common Lisp Cookbook"
 
 (defpackage :digikar-utilities.logic
   (:use :common-lisp)
-  (:export :-> :<- :<> :gen-truth-table))
+  (:export :nand
+	   :nor
+	   :->
+	   :<-
+	   :<>
+	   :gen-truth-table))
 
 (in-package :digikar-utilities.logic)
+
+(defmacro nand (&rest args) `(not (and ,@args)))
+(defmacro nor (&rest args) `(not (or ,@args)))
+
 
 (defun -> (x y) "Truth value of x implies y"(or (not x) y))
 (defun <- (x y) "Truth value of y implies x"(or (not y) x))
 (defun <> (x y) "Truth value of x if and only if y" (and (-> x y) (<- x y)))
 
-(defun nilp (list) "Returns nil if the list is not nil." (equal nil list))
 (defun gen-all-cases (sym)
-  (if (nilp sym) '(())
+  (if (null sym) '(())
     (let* ((recursed (gen-all-cases (cdr sym)))
            (with-truth (mapcar (lambda (l) (cons t l)) recursed))
            (with-nil (mapcar (lambda (l) (cons nil l)) recursed)))
