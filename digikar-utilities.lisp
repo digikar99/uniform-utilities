@@ -6,8 +6,6 @@
 (defpackage :digikar-utilities
   (:use :common-lisp)
   (:export
-   :make-hash
-   :make-vector
    :get-val
    :join-strings-using
    :list-case
@@ -19,18 +17,6 @@
    :shallow-copy))
 
 (in-package :digikar-utilities)
-
-;; the following function needs to be defined before the
-;; +format-delimiters+ constant, for obvious reasons.
-(defun make-hash (pairs)
-  "Takes input in the form '((1 2) (3 4)) and returns a hash-table
-with the mapping 1=>2 and 3=>4."
-  (if (hash-table-p pairs)
-      pairs ; to take care of the reader macro syntax confusion defined below
-    (let ((hash-table (make-hash-table :test 'equal)))
-      (loop for (key val) in pairs do
-            (setf (gethash key hash-table) val))
-      hash-table)))
 
 (defun make-vector (list)
   "Converts list to vector."
@@ -161,7 +147,7 @@ Pass the indexes as a list in case of an array."
      for object = (read-next-object +right-square+ stream)
      while object
      collect object into objects
-     finally (return `(make-vector (list ,@objects)))))
+     finally (return `(vector ,@objects))))
 
 (defun read-vector-literally (stream char)
   (declare (ignore char))
@@ -169,19 +155,7 @@ Pass the indexes as a list in case of an array."
      for object = (read-next-object +right-square+ stream)
      while object
      collect object into objects
-     finally (return (make-vector objects))))
-
-  ;; OBSERVATION: The following doesn't work as expected.
-  ;; (Originally, the decision to eval was determined by an *eval-in-<type>*
-  ;;  global variable as below.)
-  ;; (let* ((*eval-in-hash-table* t)
-  ;;        (a 2))
-  ;;   #{a "2"}) 
-  ;; PROPOSITION: Merely declaiming / declaring this as special won't work,
-  ;; because read-expansion happens before the value of *eval* is changed.
-  ;; POSSIBLE SOLUTION: Use the value of n to indicate whether to eval.
-  ;; Further, for safety purposes, eliminate eval altogether.
-
+     finally (return `(cons 'vector objects))))
 
 (defun read-hash-table (stream char n)
   (declare (ignore char))
@@ -191,10 +165,10 @@ Pass the indexes as a list in case of an array."
      while key
      for value = (read-next-object +right-brace+ stream)
      while value
-     for pair = `(list ,key ,value)
+     for pair = `(cons ,key ,value)
      collect pair into pairs
      finally
-       (return `(make-hash (list ,@pairs)))))
+       (return `(alexandria:alist-hash-table (list ,@pairs)))))
 
 (defun read-hash-table-literally (stream char)
   (declare (ignore char))
@@ -203,10 +177,10 @@ Pass the indexes as a list in case of an array."
      while key
      for value = (read-next-object +right-brace+ stream)
      while value
-     for pair = (list key value)
+     for pair = (cons key value)
      collect pair into pairs
      finally
-       (return `(make-hash ',pairs))))
+       (return `(alexandria:alist-hash-table ',pairs))))
 
   
 (set-dispatch-macro-character #\# #\{ #'read-hash-table)
