@@ -2,6 +2,7 @@
   (:use :common-lisp)
   (:export
    :get-val
+   :slice
    :join-strings-using
    :list-case
    :prefix-to-infix
@@ -84,6 +85,30 @@ Pass the indexes as a list in case of an array."
    (''list `(setf (nth ,key ,object) ,value))
    (t form)))
 
+(defun slice (sequence &optional (start 0) (end (length sequence)) (interval 1)
+			 &key type)
+  (unless type
+    (setq type
+	  (etypecase sequence
+	    (list 'list)
+	    (vector 'vector))))
+  (unless start (setq start 0))
+  (unless end (setq end (length sequence)))
+  (unless interval (setq interval 1))
+  (ecase type
+    (list
+     (loop
+	for elt in (nthcdr start  sequence)
+	for i from start to end
+	if (= 0 (rem (- i start) interval))
+	collect elt))
+    (vector
+     (loop
+	for i from start to end
+	if (= 0 (rem (- i start) interval))
+	collect elt)))
+  )
+
 ;; (defmacro slice (object &optional start end interval &key type)
 ;;   (if type
 ;;       (progn
@@ -146,7 +171,7 @@ Pass the indexes as a list in case of an array."
      for object = (read-next-object +right-square+ stream)
      while object
      collect object into objects
-     finally (return `(cons 'vector objects))))
+     finally (return (apply #'vector objects))))
 
 (defun read-hash-table (stream char n)
   (declare (ignore char))
