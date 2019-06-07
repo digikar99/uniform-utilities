@@ -8,7 +8,7 @@
   (:export
    :make-hash
    :make-vector
-   :join-using
+   :join-strings-using
    :list-case
    :get-val
    :add
@@ -35,38 +35,25 @@ with the mapping 1=>2 and 3=>4."
             (setf (gethash key hash-table) val))
       hash-table)))
 
-(defvar +format-delimiters+
-  (make-hash '(("\n" "~%"))))
 (defun get-format-delimiters (delimiter)
   "format uses some seemingly obscure delimiters, such as ~% instead of \n."
   (let ((format-delimiter (gethash delimiter +format-delimiters+)))
     (if format-delimiter format-delimiter delimiter)))
 
-(defun join-using (delimiter list/vector)
-  "Joins the elements of list / vector using the delimiter. 
-Equivalent of the python delimiter.join function."
-  (when (vectorp list/vector)
-    (setq list/vector (loop for val across list/vector collect val)))
-  (format nil (concatenate 'string
-                           "~{~A~^"
-                           (get-format-delimiters delimiter)
-                           "~}")
-          list/vector))
+;; This is a bit performant (using TIME) that using format and concatenate
+(defun join-strings-using (delimiter-string &rest args)
+  (with-output-to-string (out)
+    (format out (first args))
+    (loop
+       for arg in (cdr args)
+       do
+	 (format out delimiter-string)
+	 (format out arg))))
 
 (defun make-vector (list)
   "Converts list to vector."
   (apply #'vector list))
 
-
-;; While possible to implement get-val as a function, generic or otherwise,
-;; a brief testing with TIME suggests that the macro implementation is the most
-;; performance - as much as the bare-bones, if the type is specified.
-;;
-;; (let ((vec [1 2]))
-;;   (time (loop for i below 1e7
-;; 	     do (get-val vec 0))))
-;;
-;; The CL21:GETF is much worse.
 (defun get-val (object key &optional intended-type-of-object)
   "Get the value associated with KEY in OBJECT.
 Optionally, specify the type of OBJECT in INTENDED-TYPE-OF-OBJECT.
@@ -138,26 +125,6 @@ Pass the indexes as a list in case of an array."
    (''list `(setf (nth ,key ,object) ,value))
    (t form)))
 
-;; (defmacro slice (object &optional start end interval &key type)
-;;   (if type
-;;       (progn
-;; 	(setq intended-type-of-object (cadr intended-type-of-object))
-;; 	(case intended-type-of-object
-;; 	  (hash-table `(gethash ,key ,object))
-;; 	  (sequence `(elt ,object ,key))
-;; 	  (simple-vector `(svref ,object ,key))
-;; 	  (vector `(aref ,object ,key))
-;; 	  (array `(apply #'aref ,object ,key))
-;; 	  (string `(char ,object ,key))
-;; 	  (list `(nth ,key ,object))))
-;;       `(cond ((vectorp ,object) (aref ,object ,key))
-;; 	     ((hash-table-p ,object) (gethash ,key ,object))
-;; 	     ((arrayp ,object) (apply #'aref ,object ,key))
-;; 	     ((listp ,object) (nth ,key ,object))
-;; 	     (t
-;; 	      (error (format nil
-;; 			     "Type of ~d cannot be inferred"
-;; 			     ,object))))))
 
 ;; ==========================================================================
 ;; The following code for json-like reader macros was originally found at:
@@ -178,12 +145,12 @@ Pass the indexes as a list in case of an array."
 (defun read-next-object
     (delimiter &optional (input-stream *standard-input*))
   (flet ((peek-next-char () (peek-char t input-stream t nil t))
-         (discard-next-char () (read-char input-stream t nil t)))
+	 (discard-next-char () (read-char input-stream t nil t)))
     (if (and delimiter (char= (peek-next-char) delimiter))
-        (progn
-          (discard-next-char)
-          nil)
-      (read input-stream t nil t))))
+	(progn
+	  (discard-next-char)
+	  nil)
+	(read input-stream t nil t))))
 
 (defun read-vector (stream char n)
   (declare (ignore char))
@@ -202,42 +169,44 @@ Pass the indexes as a list in case of an array."
      collect object into objects
      finally (return (make-vector objects))))
 
-;; OBSERVATION: The following doesn't work as expected.
-;; (Originally, the decision to eval was determined by an *eval-in-<type>*
-;;  global variable as below.)
-;; (let* ((*eval-in-hash-table* t)
-;;        (a 2))
-;;   #{a "2"}) 
-;; PROPOSITION: Merely declaiming / declaring this as special won't work,
-;; because read-expansion happens before the value of *eval* is changed.
-;; POSSIBLE SOLUTION: Use the value of n to indicate whether to eval.
-;; Further, for safety purposes, eliminate eval altogether.
+  ;; OBSERVATION: The following doesn't work as expected.
+  ;; (Originally, the decision to eval was determined by an *eval-in-<type>*
+  ;;  global variable as below.)
+  ;; (let* ((*eval-in-hash-table* t)
+  ;;        (a 2))
+  ;;   #{a "2"}) 
+  ;; PROPOSITION: Merely declaiming / declaring this as special won't work,
+  ;; because read-expansion happens before the value of *eval* is changed.
+  ;; POSSIBLE SOLUTION: Use the value of n to indicate whether to eval.
+  ;; Further, for safety purposes, eliminate eval altogether.
+
 
 (defun read-hash-table (stream char n)
   (declare (ignore char))
   (declare (ignore n))
   (loop
-       for key = (read-next-object +right-brace+ stream)
-       while key
-       for value = (read-next-object +right-brace+ stream)
-       while value
-       for pair = `(list ,key ,value)
-       collect pair into pairs
-       finally
-         (return `(make-hash (list ,@pairs)))))
+     for key = (read-next-object +right-brace+ stream)
+     while key
+     for value = (read-next-object +right-brace+ stream)
+     while value
+     for pair = `(list ,key ,value)
+     collect pair into pairs
+     finally
+       (return `(make-hash (list ,@pairs)))))
 
 (defun read-hash-table-literally (stream char)
   (declare (ignore char))
   (loop
-       for key = (read-next-object +right-brace+ stream)
-       while key
-       for value = (read-next-object +right-brace+ stream)
-       while value
-       for pair = (list key value)
-       collect pair into pairs
-       finally
-         (return `(make-hash ',pairs))))
+     for key = (read-next-object +right-brace+ stream)
+     while key
+     for value = (read-next-object +right-brace+ stream)
+     while value
+     for pair = (list key value)
+     collect pair into pairs
+     finally
+       (return `(make-hash ',pairs))))
 
+  
 (set-dispatch-macro-character #\# #\{ #'read-hash-table)
 (set-dispatch-macro-character #\# #\[ #'read-vector)
 (set-macro-character #\{ #'read-hash-table-literally)
