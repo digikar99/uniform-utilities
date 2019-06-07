@@ -255,13 +255,30 @@ Example: CL-USER> (list-case '(1 2 3)
 (defun read-file (filename)
   "Read and returns the first lisp-object from file filename."
   (with-open-file (f filename :direction :input :if-does-not-exist nil)
-                  (when f (read f))))
+    (values (when f (read f))
+	    (every #'identity (list f)))))
 
-(defun write-file (filename lisp-object)
+(defun write-file (filename lisp-object &optional if-exists)
   "Writes the lisp-object to file filename, overwrites if the file already exists."
+  (when (and (not if-exists) (probe-file filename))
+    (setq if-exists
+	  (progn
+	    (format t "~d already exists. Would you like to~%" filename)
+	    (format t " [1] Rename the old file to ~d.bak~%" filename)
+	    (format t "  2  Replace (supersede) the old file~%")
+	    (format t "  3  Don't do anything~%")
+	    (format t "Specify the chosen option number: ")
+	    (force-output)
+	    (setq if-exists (read))
+	    (case if-exists
+	      (1 :rename)
+	      (2 :supersede)
+	      (3 (return-from write-file nil))
+	      (t :rename)))))
   (with-open-file (f filename :direction :output :if-does-not-exist :create
-                     :if-exists :supersede)
-                  (format f "~d" lisp-object)))
+                     :if-exists if-exists)
+    (format f "~d" (write-to-string lisp-object))
+    t))
 
 (defun getf-equal (plist indicator)
   "getf using #'equal for comparison"
