@@ -16,7 +16,7 @@
    :write-file
    :getf-equal
    :replace-all
-   :copy-instance))
+   :shallow-copy))
 
 (in-package :digikar-utilities)
 
@@ -287,6 +287,8 @@ Example: CL-USER> (list-case '(1 2 3)
         when (equal key indicator)
         return value))
 
+;; https://lispcookbook.github.io/cl-cookbook/strings.html
+;; WARNING code not optimized for large files.
 (defun replace-all (string part replacement &key (test #'char=))
   "Returns a new string in which all the occurences of the part 
 is replaced with replacement. Credits: Common Lisp Cookbook"
@@ -303,7 +305,7 @@ is replaced with replacement. Credits: Common Lisp Cookbook"
        while pos)))
 
 ;;; CREDITS: https://stackoverflow.com/questions/11067899/is-there-a-generic-method-for-cloning-clos-objects
-(defgeneric copy-instance (object &rest initargs &key &allow-other-keys)
+(defgeneric shallow-copy (object &rest initargs &key &allow-other-keys)
   (:documentation "Makes and returns a shallow copy of OBJECT.
 
   An uninitialized object of the same class as OBJECT is allocated by
