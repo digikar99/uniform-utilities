@@ -1,6 +1,6 @@
 title: digikar-utilities
 description: A library for providing a uniform interface to Common Lisp's built-in types.
-baseurl: ""
+baseurl: "/cl-digikar-utilities"
 
 markdown: kramdown
 sass:
