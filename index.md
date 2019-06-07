@@ -4,6 +4,25 @@ title: digikar-utilities
 
 A library for "getting things done" in Common Lisp.
 
+# Installation
+
+WARNING: This will modify your readtable. 
+
+This library is not stable - it is subject to changes. Though, at this point, only additions are likely.
+
+```lisp
+CL-USER> (ql:quickload 'digikar-utilities)
+To load "digikar-utilities":
+  Load 1 ASDF system:
+    digikar-utilities
+; Loading "digikar-utilities"
+
+(DIGIKAR-UTILITIES)
+```
+
+Available on github at [digikar99/cl-digikar-utilities](https://github.com/digikar99/cl-digikar-utilities).
+
+Please report the issues on [github](https://github.com/digikar99/cl-digikar-utilities/issues).
 
 # Examples and Documentation
 

@@ -1,8 +1,3 @@
-;; This library intends to provide a python like interface
-;; to getting things done in common lisp.
-;; These features include:
-;; - easier usage of vectors and hash-tables
-
 (defpackage :digikar-utilities
   (:use :common-lisp)
   (:export
@@ -17,10 +12,6 @@
    :shallow-copy))
 
 (in-package :digikar-utilities)
-
-(defun make-vector (list)
-  "Converts list to vector."
-  (apply #'vector list))
 
 (defun get-val (object key &optional intended-type-of-object)
   "Get the value associated with KEY in OBJECT.
