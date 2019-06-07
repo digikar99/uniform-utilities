@@ -8,10 +8,9 @@
   (:export
    :make-hash
    :make-vector
+   :get-val
    :join-strings-using
    :list-case
-   :get-val
-   :add
    :nand
    :nor
    :prefix-to-infix
@@ -34,21 +33,6 @@ with the mapping 1=>2 and 3=>4."
       (loop for (key val) in pairs do
             (setf (gethash key hash-table) val))
       hash-table)))
-
-(defun get-format-delimiters (delimiter)
-  "format uses some seemingly obscure delimiters, such as ~% instead of \n."
-  (let ((format-delimiter (gethash delimiter +format-delimiters+)))
-    (if format-delimiter format-delimiter delimiter)))
-
-;; This is a bit performant (using TIME) that using format and concatenate
-(defun join-strings-using (delimiter-string &rest args)
-  (with-output-to-string (out)
-    (format out (first args))
-    (loop
-       for arg in (cdr args)
-       do
-	 (format out delimiter-string)
-	 (format out arg))))
 
 (defun make-vector (list)
   "Converts list to vector."
@@ -125,6 +109,26 @@ Pass the indexes as a list in case of an array."
    (''list `(setf (nth ,key ,object) ,value))
    (t form)))
 
+;; (defmacro slice (object &optional start end interval &key type)
+;;   (if type
+;;       (progn
+;; 	(setq intended-type-of-object (cadr intended-type-of-object))
+;; 	(case intended-type-of-object
+;; 	  (hash-table `(gethash ,key ,object))
+;; 	  (sequence `(elt ,object ,key))
+;; 	  (simple-vector `(svref ,object ,key))
+;; 	  (vector `(aref ,object ,key))
+;; 	  (array `(apply #'aref ,object ,key))
+;; 	  (string `(char ,object ,key))
+;; 	  (list `(nth ,key ,object))))
+;;       `(cond ((vectorp ,object) (aref ,object ,key))
+;; 	     ((hash-table-p ,object) (gethash ,key ,object))
+;; 	     ((arrayp ,object) (apply #'aref ,object ,key))
+;; 	     ((listp ,object) (nth ,key ,object))
+;; 	     (t
+;; 	      (error (format nil
+;; 			     "Type of ~d cannot be inferred"
+;; 			     ,object))))))
 
 ;; ==========================================================================
 ;; The following code for json-like reader macros was originally found at:
@@ -217,6 +221,16 @@ Pass the indexes as a list in case of an array."
 
 ;; ------------------------------------------------------------------------
 
+;; This is a bit performant (using TIME) that using format and concatenate
+(defun join-strings-using (delimiter-string &rest args)
+  (with-output-to-string (out)
+    (format out (first args))
+    (loop
+       for arg in (cdr args)
+       do
+	 (format out delimiter-string)
+	 (format out arg))))
+
 (defmacro list-case (list &rest clauses)
   "Case using different lengths of list.
 Example: CL-USER> (list-case '(1 2 3)
@@ -230,12 +244,6 @@ Example: CL-USER> (list-case '(1 2 3)
                              `(destructuring-bind ,(car clause) ,list
                                 ,@(cdr clause)))))))
 
-(defun add (&rest args)
-  "Returns the addition of numbers, or concatenation of strings or lists."
-  (when args
-    (cond ((numberp (first args)) (apply #'+ args))
-          ((listp (first args)) (apply #'append args))
-          ((stringp (first args)) (apply #'concatenate 'string args)))))
 
 (defmacro nand (&rest args) `(not (and ,@args)))
 (defmacro nor (&rest args) `(not (or ,@args)))
