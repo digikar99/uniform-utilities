@@ -1,7 +1,7 @@
 title: digikar-utilities
 description: A library for providing a uniform interface to Common Lisp's built-in types.
 baseurl: "/cl-digikar-utilities"
-
+exclude: ["*.lisp", "*.asd", "README.md"] 
 markdown: kramdown
 sass:
   style: :compressed
