@@ -2,6 +2,9 @@
   (:use :common-lisp)
   (:export
    :get-val
+   :slice-vector
+   :slice-string
+   :slice-list
    :slice
    :join-strings-using
    :list-case
@@ -20,19 +23,19 @@ Optionally, specify the type of OBJECT in INTENDED-TYPE-OF-OBJECT.
 Pass the indexes as a list in case of an array."
   (unless intended-type-of-object
     (setq intended-type-of-object
-	  (etypecase object
-	    (vector 'vector)
-	    (hash-table 'hash-table)
-	    (array 'array)
-	    (list 'list))))
+          (etypecase object
+            (vector 'vector)
+            (hash-table 'hash-table)
+            (array 'array)
+            (list 'list))))
   (ecase intended-type-of-object
-	  (hash-table (gethash key object))
-	  (sequence (elt object key))
-	  (simple-vector (svref object key))
-	  (vector (aref object key))
-	  (array (apply #'aref object key))
-	  (string (char object key))
-	  (list (nth key object))))
+          (hash-table (gethash key object))
+          (sequence (elt object key))
+          (simple-vector (svref object key))
+          (vector (aref object key))
+          (array (apply #'aref object key))
+          (string (char object key))
+          (list (nth key object))))
 
 (define-compiler-macro get-val (&whole form object key &optional intended-type-of-object)
   "Get the value associated with KEY in OBJECT.
@@ -55,11 +58,11 @@ Optionally, specify the type of OBJECT in INTENDED-TYPE-OF-OBJECT.
 Pass the indexes as a list in case of an array."
   (unless intended-type-of-object
     (setq intended-type-of-object
-	  (etypecase object
-	    (vector 'vector)
-	    (hash-table 'hash-table)
-	    (array 'array)
-	    (list 'list))))
+          (etypecase object
+            (vector 'vector)
+            (hash-table 'hash-table)
+            (array 'array)
+            (list 'list))))
   (ecase intended-type-of-object
       (hash-table (setf (gethash key object) value))
       (sequence (setf (elt object key) value))
@@ -85,58 +88,117 @@ Pass the indexes as a list in case of an array."
    (''list `(setf (nth ,key ,object) ,value))
    (t form)))
 
-(defun slice (sequence &optional (start 0) (end (length sequence)) (interval 1)
-			 &key type)
+(defun slice-vector (sequence &optional (start 0) (end (length sequence)) (interval 1)
+				allow-negative-indices)
+  (destructuring-bind (st ed abs-interval)
+      (normalize start end interval (length sequence) allow-negative-indices)
+    (let* ((out-size (ceiling  (/ (- ed st)
+                                      interval)))
+           (out (make-array (if (< out-size 0)
+				(return-from slice-vector nil)
+				out-size))))
+      (if (and interval (< interval 0))
+          (loop
+             for i downfrom st to (1+ ed) by abs-interval
+             for out-idx from 0
+             do
+               (setf (get-val out out-idx 'vector)
+                     (get-val sequence i 'vector)))
+          (loop
+             for i from st to (1- ed) by abs-interval
+             for out-idx from 0
+             do
+               (setf (get-val out out-idx 'vector)
+                     (get-val sequence i 'vector))))
+      out)))
+
+(defun slice-string (sequence &optional (start 0) (end (length sequence)) (interval 1)
+				allow-negative-indices)
+  (destructuring-bind (st ed abs-interval)
+      (normalize start end interval (length sequence) allow-negative-indices)
+    (let* ((out-size (ceiling  (/ (- ed st)
+                                      interval)))
+           (out (make-string (if (< out-size 0)
+				(return-from slice-string nil)
+				out-size))))
+      (if (and interval (< interval 0))
+          (loop
+             for i downfrom st to (1+ ed) by abs-interval
+             for out-idx from 0
+             do
+               (setf (get-val out out-idx 'string)
+                     (get-val sequence i 'string)))
+          (loop
+             for i from st to (1- ed) by abs-interval
+             for out-idx from 0
+             do
+               (setf (get-val out out-idx 'string)
+                     (get-val sequence i 'string))))
+      out)))
+
+(defun slice-list (sequence &optional (start 0) (end (length sequence)) (interval 1)
+			      allow-negative-indices)
+  (let ((len (length sequence)))
+    (destructuring-bind (st ed abs-interval)
+	(normalize start end interval len allow-negative-indices)
+      (if (and interval (< interval 0))
+	  (loop
+	     for elt in (nthcdr (- len st 1) (reverse sequence))
+	     for i downfrom st to (1+ ed)
+	     if (= 0 (rem (- i st) abs-interval))
+	     collect elt)
+	  (loop
+	     for elt in (nthcdr st sequence)
+	     for i from st to (1- ed)
+	     if (= 0 (rem (- i st) abs-interval))
+	     collect elt)))))
+
+(defun slice (sequence &optional (start 0) end (interval 1)
+			 (allow-negative-indices nil) &key type)
+  "Equivalent of the python list slicing."
   (unless type
     (setq type
-	  (etypecase sequence
-	    (list 'list)
-	    (vector 'vector))))
-  (unless start (setq start 0))
-  (unless end (setq end (length sequence)))
-  (unless interval (setq interval 1))
-  (ecase type
-    (list
-     (loop
-	for elt in (nthcdr start  sequence)
-	for i from start to end
-	if (= 0 (rem (- i start) interval))
-	collect elt))
-    (vector
-     (loop
-	for i from start to end
-	if (= 0 (rem (- i start) interval))
-	collect elt)))
-  )
+          (etypecase sequence
+            (list 'list)
+            (string 'string)
+            (vector 'vector))))
+  (let ((slice-fun
+	 (ecase type
+	   (list 'slice-list)
+	   (string 'slice-string)
+	   (vector 'slice-vector))))
+    (apply slice-fun (list sequence start end interval allow-negative-indices))))
 
-;; (defmacro slice (object &optional start end interval &key type)
-;;   (if type
-;;       (progn
-;; 	(setq intended-type-of-object (cadr intended-type-of-object))
-;; 	(case intended-type-of-object
-;; 	  (hash-table `(gethash ,key ,object))
-;; 	  (sequence `(elt ,object ,key))
-;; 	  (simple-vector `(svref ,object ,key))
-;; 	  (vector `(aref ,object ,key))
-;; 	  (array `(apply #'aref ,object ,key))
-;; 	  (string `(char ,object ,key))
-;; 	  (list `(nth ,key ,object))))
-;;       `(cond ((vectorp ,object) (aref ,object ,key))
-;; 	     ((hash-table-p ,object) (gethash ,key ,object))
-;; 	     ((arrayp ,object) (apply #'aref ,object ,key))
-;; 	     ((listp ,object) (nth ,key ,object))
-;; 	     (t
-;; 	      (error (format nil
-;; 			     "Type of ~d cannot be inferred"
-;; 			     ,object))))))
+(defun normalize (start end interval length allow-negative-indices)
+  (if allow-negative-indices
+      (LIST (COND ((NULL START)
+		   (if (and interval (< interval 0))
+		       (1- length)
+		       0))
+		  ((< START 0) (+ START LENGTH))
+		  (T  START))
+	    (COND ((NULL END)
+		   (if (and interval (< interval 0))
+		       -1
+		       LENGTH))
+		  ((< END 0) (+ END LENGTH))
+		  (T  END))
+	    (cond (interval (abs interval))
+		  (t 1)))
+      (list (or start 0) (or end length) (or interval 1))))
 
-;; ==========================================================================
-;; The following code for json-like reader macros was originally found at:
-;; https://gist.github.com/chaitanyagupta/9324402
-;;
-;; It has been modified since then.
+(define-compiler-macro slice
+    (&whole form sequence &optional (start 0) end (interval 1)
+	    (allow-negative-indices nil) &key type)
+  (if (or (null interval) (= 1 interval))
+      `(subseq ,sequence (or ,start 0) ,end)
+      (alexandria:switch
+       (type :test 'equalp)
+       (''list `(slice-list ,sequence ,start ,end ,interval))
+       (''string `(slice-string ,sequence ,start ,end ,interval))
+       (''vector `(slice-vector ,sequence ,start ,end ,interval))
+       (t form))))
 
-(defconstant +hash+ #\#)
 (defconstant +left-square+ #\[)
 (defconstant +right-square+ #\])
 (defconstant +left-brace+ #\{)
@@ -149,12 +211,12 @@ Pass the indexes as a list in case of an array."
 (defun read-next-object
     (delimiter &optional (input-stream *standard-input*))
   (flet ((peek-next-char () (peek-char t input-stream t nil t))
-	 (discard-next-char () (read-char input-stream t nil t)))
+         (discard-next-char () (read-char input-stream t nil t)))
     (if (and delimiter (char= (peek-next-char) delimiter))
-	(progn
-	  (discard-next-char)
-	  nil)
-	(read input-stream t nil t))))
+        (progn
+          (discard-next-char)
+          nil)
+        (read input-stream t nil t))))
 
 (defun read-vector (stream char n)
   (declare (ignore char))
@@ -216,8 +278,8 @@ Pass the indexes as a list in case of an array."
     (loop
        for arg in (cdr args)
        do
-	 (format out delimiter-string)
-	 (format out arg))))
+         (format out delimiter-string)
+         (format out arg))))
 
 (defmacro list-case (list &rest clauses)
   "Case using different lengths of list.
@@ -246,25 +308,25 @@ Example: CL-USER> (list-case '(1 2 3)
   "Read and returns the first lisp-object from file filename."
   (with-open-file (f filename :direction :input :if-does-not-exist nil)
     (values (when f (read f))
-	    (every #'identity (list f)))))
+            (every #'identity (list f)))))
 
 (defun write-file (filename lisp-object &optional if-exists)
   "Writes the lisp-object to file filename, overwrites if the file already exists."
   (when (and (not if-exists) (probe-file filename))
     (setq if-exists
-	  (progn
-	    (format t "~d already exists. Would you like to~%" filename)
-	    (format t " [1] Rename the old file to ~d.bak~%" filename)
-	    (format t "  2  Replace (supersede) the old file~%")
-	    (format t "  3  Don't do anything~%")
-	    (format t "Specify the chosen option number: ")
-	    (force-output)
-	    (setq if-exists (read))
-	    (case if-exists
-	      (1 :rename)
-	      (2 :supersede)
-	      (3 (return-from write-file nil))
-	      (t :rename)))))
+          (progn
+            (format t "~d already exists. Would you like to~%" filename)
+            (format t " [1] Rename the old file to ~d.bak~%" filename)
+            (format t "  2  Replace (supersede) the old file~%")
+            (format t "  3  Don't do anything~%")
+            (format t "Specify the chosen option number: ")
+            (force-output)
+            (setq if-exists (read))
+            (case if-exists
+              (1 :rename)
+              (2 :supersede)
+              (3 (return-from write-file nil))
+              (t :rename)))))
   (with-open-file (f filename :direction :output :if-does-not-exist :create
                      :if-exists if-exists)
     (format f "~d" (write-to-string lisp-object))
@@ -318,11 +380,11 @@ is replaced with replacement. Credits: Common Lisp Cookbook"
 (defpackage :digikar-utilities.logic
   (:use :common-lisp)
   (:export :nand
-	   :nor
-	   :->
-	   :<-
-	   :<>
-	   :gen-truth-table))
+           :nor
+           :->
+           :<-
+           :<>
+           :gen-truth-table))
 
 (in-package :digikar-utilities.logic)
 

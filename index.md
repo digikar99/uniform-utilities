@@ -119,6 +119,35 @@ CL-USER> vec
 #(5 B)
 ```
 
+### slice
+`(slice sequence &optional (start 0) end (interval 1) allow-negative-indices &key type)`
+
+Equivalent of the python list slicing:
+```lisp
+CL-USER> (slice [1 2 3 4 5] 3)
+#(4 5)
+CL-USER> (slice [1 2 3 4 5] 3 4)
+#(4)
+CL-USER> (slice [1 2 3 4 5] nil nil -2)
+NIL
+CL-USER> (slice [1 2 3 4 5] nil nil -2 t)
+#(5 3 1)
+```
+Type specialisation if specified:
+```lisp
+CL-USER> (funcall (compiler-macro-function 'slice)
+                  '(slice "abcde" nil nil 2 t :type 'string)
+                  nil)
+(SLICE-STRING "abcde" NIL NIL 2)
+```
+Reduces to `subseq` if interval is 1 or `nil`:
+```lisp
+CL-USER> (funcall (compiler-macro-function 'slice)
+                  '(slice "abcde" nil nil 1 t :type 'string)
+                  nil)
+(SUBSEQ "abcde" (OR NIL 0) NIL)
+```
+
 ## Other utility functions
 
 ### join-strings-using
