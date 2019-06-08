@@ -88,6 +88,7 @@ Pass the indexes as a list in case of an array."
    (''list `(setf (nth ,key ,object) ,value))
    (t form)))
 
+(declaim (ftype (function (vector &optional t t t *)) slice-vector))
 (defun slice-vector (sequence &optional (start 0) (end (length sequence)) (interval 1)
 				allow-negative-indices)
   (destructuring-bind (st ed abs-interval)
@@ -112,6 +113,7 @@ Pass the indexes as a list in case of an array."
                      (get-val sequence i 'vector))))
       out)))
 
+(declaim (ftype (function (string &optional t t t *)) slice-string))
 (defun slice-string (sequence &optional (start 0) (end (length sequence)) (interval 1)
 				allow-negative-indices)
   (destructuring-bind (st ed abs-interval)
@@ -136,6 +138,7 @@ Pass the indexes as a list in case of an array."
                      (get-val sequence i 'string))))
       out)))
 
+(declaim (ftype (function (list &optional t t t *) list) slice-list))
 (defun slice-list (sequence &optional (start 0) (end (length sequence)) (interval 1)
 			      allow-negative-indices)
   (let ((len (length sequence)))
@@ -185,18 +188,25 @@ Pass the indexes as a list in case of an array."
 		  (T  END))
 	    (cond (interval (abs interval))
 		  (t 1)))
-      (list (or start 0) (or end length) (or interval 1))))
+      (progn
+	(assert (<= 0 (or start 0) (or end length)))
+	(assert (<= 0 (or interval 1)))
+	(list (or start 0) (or end length) (or interval 1)))))
 
 (define-compiler-macro slice
     (&whole form sequence &optional (start 0) end (interval 1)
 	    (allow-negative-indices nil) &key type)
   (if (or (null interval) (= 1 interval))
-      `(subseq ,sequence (or ,start 0) ,end)
+      `(progn
+	 (assert (<= 0 (or ,start 0)))
+	 (assert (<= 0 (or ,end 0)))
+	 (assert (<= 0 (or ,interval 1)))
+	 (subseq ,sequence (or ,start 0) ,end))
       (alexandria:switch
        (type :test 'equalp)
-       (''list `(slice-list ,sequence ,start ,end ,interval))
-       (''string `(slice-string ,sequence ,start ,end ,interval))
-       (''vector `(slice-vector ,sequence ,start ,end ,interval))
+       (''list `(slice-list ,sequence ,start ,end ,interval ,allow-negative-indices))
+       (''string `(slice-string ,sequence ,start ,end ,interval ,allow-negative-indices))
+       (''vector `(slice-vector ,sequence ,start ,end ,interval ,allow-negative-indices))
        (t form))))
 
 (defconstant +left-square+ #\[)
@@ -246,7 +256,7 @@ Pass the indexes as a list in case of an array."
      for pair = `(cons ,key ,value)
      collect pair into pairs
      finally
-       (return `(alexandria:alist-hash-table (list ,@pairs)))))
+       (return `(alexandria:alist-hash-table (list ,@pairs) :test 'equal))))
 
 (defun read-hash-table-literally (stream char)
   (declare (ignore char))
@@ -258,7 +268,7 @@ Pass the indexes as a list in case of an array."
      for pair = (cons key value)
      collect pair into pairs
      finally
-       (return `(alexandria:alist-hash-table ',pairs))))
+       (return `(alexandria:alist-hash-table ',pairs :test 'equal))))
 
   
 (set-dispatch-macro-character #\# #\{ #'read-hash-table)
