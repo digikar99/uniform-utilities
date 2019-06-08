@@ -39,10 +39,10 @@ CL-USER> [a b]
 CL-USER> (aref [a b] 0)
 A
 ```
-`'equal` has been used as the test function, as it allows for strings. If you want evaluation, the following syntax may be used.
+If you want evaluation, the following syntax may be used.
 
 ```lisp
-CL-USER> (let* ((a 1) (vec [a 3]))
+CL-USER> (let* ((a 1) (vec #[a 3]))
            (aref vec 0))
 1
 ```
