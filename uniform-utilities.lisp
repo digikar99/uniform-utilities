@@ -1,75 +1,93 @@
 (defpackage :uniform-utilities
-  (:use :common-lisp)
+  (:use :common-lisp :metabang-bind :iterate)
+  (:shadowing-import-from :iterate)
   (:export
    :getv
    :getv-chained
-   :dlet*
-   :defdpar))
+   :defdpar)
+  ;; "bind" from metabang bind
+  #.(cons :export (loop for s being the external-symbols of (find-package :metabang-bind) collect s))
+  #.(cons :export (loop for s being the external-symbols of (find-package :iterate) collect s)))
 
 (in-package :uniform-utilities)
+
+(defun infer-intended-type-of-object (object)
+  (etypecase object
+    (hash-table 'hash-table)
+    (string 'string)
+    (vector 'vector)
+    (array 'array)
+    (list 'list)
+    (standard-object 'standard-object)
+    (structure-object 'structure-object)))
 
 (defun getv (object key &optional intended-type-of-object)
   "Get the value associated with KEY in OBJECT.
 Optionally, specify the type of OBJECT in INTENDED-TYPE-OF-OBJECT.
 Pass the indexes as a list in case of an array.
 INTENDED-TYPE-OF-OBJECT, if specified, must be a symbol, and one of
-  HASH-TABLE, SEQUENCE, SIMPLE-VECTOR, VECTOR, ARRAY, STRING, LIST."
+  HASH-TABLE, SIMPLE-STRING, SIMPLE-VECTOR, STRING, VECTOR, ARRAY, LIST,
+  SEQUENCE, STANDARD-OBJECT, STRUCTURE-OBJECT."
   (unless intended-type-of-object
-    (setq intended-type-of-object
-          (etypecase object
-            (vector 'vector)
-            (hash-table 'hash-table)
-            (array 'array)
-            (list 'list))))
+    (setq intended-type-of-object (infer-intended-type-of-object object)))
+  ;; For reasons beyond my comprehension, (etypecase object ...) without above
+  ;; instead of this doesn't let types be checked.
   (ecase intended-type-of-object
     (hash-table (gethash key object))
-    (sequence (elt object key))
+    (simple-string (schar object key))
     (simple-vector (svref object key))
+    (string (char object key))
     (vector (aref object key))
     (array (apply #'aref object key))
-    (string (char object key))
-    (list (nth key object))))
+    (list (nth key object))
+    (sequence (elt object key))
+    (standard-object (slot-value object key))
+    (structure-object (slot-value object key))))
 
 (define-compiler-macro getv (&whole form object key &optional intended-type-of-object)
   (alexandria:switch
       (intended-type-of-object :test 'equalp)
     (''hash-table `(gethash ,key ,object))
-    (''sequence `(elt ,object ,key))
+    (''simple-string `(schar ,object ,key))
     (''simple-vector `(svref ,object ,key))
+    (''string `(char ,object ,key))
     (''vector `(aref ,object ,key))
     (''array `(apply #'aref ,object ,key))
-    (''string `(char ,object ,key))
     (''list `(nth ,key ,object))
+    (''sequence `(elt ,object ,key))
+    (''standard-object `(slot-value ,object ,key))
+    (''structure-object `(slot-value ,object ,key))
     (t form)))
 
 (defun (setf getv) (value object key &optional intended-type-of-object)
   (unless intended-type-of-object
-    (setq intended-type-of-object
-          (etypecase object
-            (vector 'vector)
-            (hash-table 'hash-table)
-            (array 'array)
-            (list 'list))))
+    (setq intended-type-of-object (infer-intended-type-of-object object)))
   (ecase intended-type-of-object
     (hash-table (setf (gethash key object) value))
-    (sequence (setf (elt object key) value))
+    (simple-string (setf (schar object key) value))
     (simple-vector (setf (svref object key) value))
+    (string (setf (char object key) value))
     (vector (setf (aref object key) value))
     (array (setf (apply #'aref object key) value))
-    (string (setf (char object key) value))
-    (list (setf (nth key object) value))))
+    (list (setf (nth key object) value))
+    (sequence (setf (elt object key) value))
+    (standard-object (setf (slot-value object key) value))
+    (structure-object (setf (slot-value object key) value))))
 
 (define-compiler-macro (setf getv)
     (&whole form value object key &optional intended-type-of-object)
   (alexandria:switch
       (intended-type-of-object :test 'equalp)
     (''hash-table `(setf (gethash ,key ,object) ,value))
-    (''sequence `(setf (elt ,object ,key) ,value))
+    (''simple-string `(setf (schar ,object ,key) ,value))
     (''simple-vector `(setf (svref ,object ,key) ,value))
+    (''string `(setf (char ,object ,key) ,value))
     (''vector `(setf (aref ,object ,key) ,value))
     (''array `(setf (apply #'aref ,object ,key) ,value))
-    (''string `(setf (char ,object ,key) ,value))
     (''list `(setf (nth ,key ,object) ,value))
+    (''sequence `(setf (elt ,object ,key) ,value))
+    (''structure-object `(setf (slot-value ,object ,key) ,value))
+    (''standard-object `(setf (slot-value ,object ,key) ,value))
     (t form)))
 
 (defun getv-chained (object &rest keys)
@@ -89,28 +107,6 @@ This won't work with multidimensional arrays though!"
   (setf (getv (apply #'getv-chained object (butlast keys))
               (car (last keys)))
         value))
-
-(defmacro dlet* (bindings &body body)
-  "A combination of destructuring-bind, multiple-value-bind and let*.
-Inspired by dsetq from :iterate library.
-
-Example. 
- >> (flet ((foo () (values '(1 2) 6)))
-     (dlet* ((a 4) 
-             ((b c) (foo))
-             ((values (d e) f) (foo)))
-       (+ a b c d e f)))
- 16"
-  (if bindings
-      (macroexpand
-         (etypecase (caar bindings)
-           (list (if (eq 'values (caaar bindings))
-                     `(destructuring-bind ,(cdaar bindings) (multiple-value-list ,(cadar bindings))
-                        ,`(dlet* ,(cdr bindings) ,@body))
-                     `(destructuring-bind ,(caar bindings) ,(cadar bindings)
-                        ,`(dlet* ,(cdr bindings) ,@body))))
-           (symbol `(let (,(car bindings)) ,`(dlet* ,(cdr bindings) ,@body)))))
-      `(progn ,@body)))
 
 (defun traverse-tree (var-structure val-structure &key cons)
   "A helper function for DEFDPAR.
@@ -141,7 +137,7 @@ Inspired by dsetq from :iterate library.
 Example. 
  (flet ((foo () (values '(1 2) 3)))
    (defdpar 
-     (values b c) (foo)
+     (:values b c) (foo)
      (d e) (foo)
      f (car (foo))))"
   (when things
@@ -151,7 +147,7 @@ Example.
               (val-structure (second things)))
           (cond ((symbolp var-structure)
                  `(defparameter ,var-structure ,val-structure))
-                ((eq 'values (first var-structure))
+                ((eq :values (first var-structure))
                  `(let ((,values (multiple-value-list ,val-structure)))
                     (unless (tree-equivalent-p ',(cdr var-structure) ,values)
                       (error (format nil "Cannot unpack ~A to ~A"

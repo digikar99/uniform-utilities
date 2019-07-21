@@ -1,26 +1,49 @@
+# uniform-utilities
 
-## Background and Introduction
+The library aims to provide a uniform way of getting things done in Common Lisp. Unlike its alpha-variant (digikar-utiliites), this does not modify the readtable, and has a single goal.
 
-WARNING: This will modify your read-table.
+Towards this, it defines:
 
-This is yet another utility library for common lisp. (Several libraries can be found at [cliki](https://cliki.net/utilities). Notable ones besides those include  [Alexandria](http://common-lisp.net/project/alexandria/) and [cl21](https://lispcookbook.github.io/cl-cookbook/cl21.html). There's also [a good discussion on reddit about "fixing" common lisp](https://www.reddit.com/r/lisp/comments/6t6fqs/which_sugared_library_do_common_lispers_prefer/).
+- getv
+- getv-chained
+- defdpar
 
-I don't think it is good enough yet; therefore, I'm using a personalized name - in case someone comes up with a "God" level library, let them use a good name. (Learnt over reddit that one should give a good name, only after it is proven to be good. And it is reasonable: we don't want to waste good names. :p)
+and borrows from [metabang-bind](https://common-lisp.net/project/metabang-bind/user-guide.html) and [iterate](https://digikar99.github.io/cl-iterate-docs/). (Both `metabang-bind` and `iterate` are available on quicklisp.)
 
-Detailed documentation is available on [github pages](https://digikar99.github.io/cl-digikar-utilities/).
+There also exists [access](https://github.com/AccelerationNet/access) which might be considered more uniform that `getv` below; however, it has a significant runtime overhead (factor of 10) and type checking seems to be at issue.
 
-The library is still unreleased, and therefore, subject to changes.
+### getv
+`(getv object key &optional intended-type-of-object)`
 
-## Undocumented
+`getv` provides a uniform interface to strings, vectors, hash-tables, arrays, lists, standard objects as well as structs. On specifying `intended-type-of-object`, there is no runtime overhead, along with type safety of the specialized functions assocated with the data types - this is achieved using `compiler-macros`.
 
+There also exists `(setf getv)`. This, too, has compiler macros.
+
+### getv-chained
+`(getv-chained object &rest keys)`
+
+This allows for chaining the accessors:
 
 ```lisp
-    CL-USER> (digikar-utilities:getf-equal '("a" "b" "c" "d") "a")
-    "b"
-
-    CL-USER> (digikar-utilities.logic:gen-truth-table (a b c) (and a b c))
-    ((T (T T T)) (NIL (T T NIL)) (NIL (T NIL T)) (NIL (T NIL NIL)) (NIL (NIL T T))
-     (NIL (NIL T NIL)) (NIL (NIL NIL T)) (NIL (NIL NIL NIL)))
-    (A B C)
-    
+CL-USER> (let ((a '((1 2 3) (4 5 6)))) 
+           (getv-chained a 0 2))
+3
 ```
+
+However, unlike `getv`, this does not allow for any type specifiers. (There's arises ambiguity with multidimensional array syntax.)
+
+This, too, has `(setf getv-chained)`.
+
+### defdpar
+`(defdpar &rest things)`
+
+```lisp
+(flet ((foo () (values '(1 2) 3)))
+   (defdpar 
+     (:values b c) (foo)
+     (d e) (foo)
+     f (car (foo))))
+```
+
+This provides a combination of `destructuring` with `defparameter`. However, lambda lists are not supported in the general case - the support is only restricted for `destructuring` coupled with `multiple-values`.
+
