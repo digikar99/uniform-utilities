@@ -1,4 +1,10 @@
 
+## Checkout uniform-utilities
+
+`digikar-utilities` was mostly an experimental alpha work, and helped me gain much experience. Kindly checkout [uniform-utilities](https://github.com/digikar99/cl-digikar-utilities/tree/uniform-utilities) for a more serious library.
+
+`digikar-utilities` is now deprecated. In case you are interested, you can use the [0.1-alpha release](https://github.com/digikar99/cl-digikar-utilities/releases/tag/0.1-alpha).
+
 ## Background and Introduction
 
 WARNING: This will modify your read-table.
