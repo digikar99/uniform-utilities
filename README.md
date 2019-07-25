@@ -35,7 +35,7 @@ However, unlike `getv`, this does not allow for any type specifiers. (There's ar
 This, too, has `(setf getv-chained)`.
 
 ### defdpar
-`(defdpar &rest things)`
+`(defdpar &rest vars-and-val)`
 
 ```lisp
 (flet ((foo () (values '(1 2) 3)))
@@ -47,3 +47,9 @@ This, too, has `(setf getv-chained)`.
 
 This provides a combination of `destructuring` with `defparameter`. However, lambda lists are not supported in the general case - the support is only restricted for `destructuring` coupled with `multiple-values`.
 
+## Testing
+
+```lisp
+(ql:quickload :uniform-utilities-test)
+(prove:run-test-package :uniform-utilities-test)
+```
