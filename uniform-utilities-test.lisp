@@ -1,3 +1,4 @@
+
 ;; Local Variables:
 ;; eval: (put 'defdpar 'lisp-indent-function 0)
 ;; End:
@@ -99,10 +100,9 @@
 
 (deftest defdpar-without-errors
   (env-defdpar
-    (defdpar
-        (:values b c) (foo)
-      (d e) (foo)
-      f (car (foo))))
+    (defdpar b c (foo))
+    (defdpar (d e) (foo))
+    (defdpar f (car (foo))))
   (is b '(1 2) :test #'equalp)
   (is c 6)
   (is d 1)

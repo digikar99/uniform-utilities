@@ -123,39 +123,40 @@ Example:
                  (traverse-tree (cdr var-structure) `(cdr ,val-structure) :cons cons)))))
 
 (defun tree-equivalent-p (tree1 tree2)
+  (when (listp tree1) (assert (listp tree2)))
   (cond ((and (null tree1) (null tree2)) t)
-        ((or (null tree1) (null tree2) nil))
+        ((or (null tree1) (null tree2)) nil) 
         ((symbolp tree1) t)
         (t (and (= (length tree1) (length tree2))
                 (tree-equivalent-p (car tree1) (car tree2))
                 (tree-equivalent-p (cdr tree1) (cdr tree2))))))
 
-(defmacro defdpar (&rest things)
+(defmacro defdpar (&rest vars-and-val)
   "A combination of destructuring-bind, multiple-value-bind and defparameter.
 Inspired by dsetq from :iterate library.
 
 Example. 
  (flet ((foo () (values '(1 2) 3)))
-   (defdpar 
-     (:values b c) (foo)
-     (d e) (foo)
-     f (car (foo))))"
-  (when things
-    `(progn
-       ,(let ((values (gensym))
-              (var-structure (first things))
-              (val-structure (second things)))
-          (cond ((symbolp var-structure)
-                 `(defparameter ,var-structure ,val-structure))
-                ((eq :values (first var-structure))
-                 `(let ((,values (multiple-value-list ,val-structure)))
-                    (unless (tree-equivalent-p ',(cdr var-structure) ,values)
-                      (error (format nil "Cannot unpack ~A to ~A"
-                                     ,values ',(cdr var-structure))))
-                    ,@(traverse-tree (cdr var-structure) values :cons 'cl:defparameter)))
-                (t
-                 `(let ((,values ,val-structure))
-                    (unless (tree-equivalent-p ',var-structure ,values)
-                      (error (format nil "Cannot unpack ~A to ~A" ,values ',var-structure)))
-                    ,@(traverse-tree var-structure values :cons 'cl:defparameter)))))
-       ,@(cdr (macroexpand-1 `(defdpar ,@(cddr things)))))))
+   (defdpar b c (foo))     ; b is '(1 2), c is 3
+   (defdpar (d e) (foo))   ; d is 1, e is 2
+   (defdpar f (car (foo))) ; f is 1"
+  (if (= 2 (length vars-and-val))
+      `(progn
+         ,(let ((values (gensym))
+                (var-structure (first vars-and-val))
+                (val-structure (second vars-and-val)))
+            (if (symbolp var-structure)
+                `(defparameter ,var-structure ,val-structure)
+                `(let ((,values ,val-structure))
+                   (unless (tree-equivalent-p ',var-structure ,values)
+                     (error (format nil "Cannot unpack ~A to ~A"
+                                    ,values ',var-structure)))
+                   ,@(traverse-tree var-structure values :cons 'cl:defparameter)))))
+      (let* ((vars (butlast vars-and-val))
+             (gensyms (loop for var in vars collect (gensym))))
+        `(let ,gensyms
+           (declare (ignorable ,@gensyms))
+           (multiple-value-setq ,gensyms ,(car (last vars-and-val)))
+           ,@(loop for var-structure in vars
+                for gensym in gensyms
+                appending (cdr (macroexpand-1 `(defdpar ,var-structure ,gensym))))))))
