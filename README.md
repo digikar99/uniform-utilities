@@ -7,10 +7,13 @@ Towards this, it defines:
 - getv
 - getv-chained
 - defdpar
+- dlet*
 
-and borrows from [metabang-bind](https://common-lisp.net/project/metabang-bind/user-guide.html) and [iterate](https://digikar99.github.io/cl-iterate-docs/). (Both `metabang-bind` and `iterate` are available on quicklisp.)
+and borrows from  and [iterate](https://digikar99.github.io/cl-iterate-docs/). (`iterate` is available separately on quicklisp.)
 
 There also exists [access](https://github.com/AccelerationNet/access) which might be considered more uniform that `getv` below; however, it has a significant runtime overhead (factor of 10) and type checking seems to be at issue.
+
+Further, there is also [metabang-bind](https://common-lisp.net/project/metabang-bind/user-guide.html), which [isn't perfect](https://www.reddit.com/r/Common_Lisp/comments/cfxk03/unifying_all_bindings_metabangbindbind/) - neither is this library though.
 
 ### getv
 `(getv object key &optional intended-type-of-object)`
@@ -30,7 +33,7 @@ CL-USER> (let ((a '((1 2 3) (4 5 6))))
 3
 ```
 
-However, unlike `getv`, this does not allow for any type specifiers. (There's arises ambiguity with multidimensional array syntax.)
+However, unlike `getv`, this does not allow for any type specifiers. (There arises ambiguity with multidimensional array syntax.)
 
 This, too, has `(setf getv-chained)`.
 
@@ -39,13 +42,23 @@ This, too, has `(setf getv-chained)`.
 
 ```lisp
 (flet ((foo () (values '(1 2) 3)))
-   (defdpar 
-     (:values b c) (foo)
-     (d e) (foo)
-     f (car (foo))))
+   (defdpar b c (foo))      ; b is '(1 2), c is 3
+   (defdpar (d e) (foo))    ; d is 1, e is 2
+   (defdpar f (car (foo)))) ; f is 1
 ```
 
 This provides a combination of `destructuring` with `defparameter`. However, lambda lists are not supported in the general case - the support is only restricted for `destructuring` coupled with `multiple-values`.
+
+### dlet*
+`(dlet* bindings &body body)`
+
+```lisp
+(dlet* (((a c) b (values '(1 3) 2))
+        (d e f (values 1 2))
+        ((a b) '(4 5))) 
+  (list a b c d e f))
+;; => (4 5 3 1 2 NIL)
+```
 
 ## Testing
 

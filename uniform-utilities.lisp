@@ -1,12 +1,11 @@
 (defpackage :uniform-utilities
-  (:use :common-lisp :metabang-bind :iterate)
+  (:use :common-lisp :iterate)
   (:shadowing-import-from :iterate)
   (:export
    :getv
    :getv-chained
-   :defdpar)
-  ;; "bind" from metabang bind
-  #.(cons :export (loop for s being the external-symbols of (find-package :metabang-bind) collect s))
+   :defdpar
+   :dlet*)
   #.(cons :export (loop for s being the external-symbols of (find-package :iterate) collect s)))
 
 (in-package :uniform-utilities)
@@ -132,14 +131,13 @@ Example:
                 (tree-equivalent-p (cdr tree1) (cdr tree2))))))
 
 (defmacro defdpar (&rest vars-and-val)
-  "A combination of destructuring-bind, multiple-value-bind and defparameter.
-Inspired by dsetq from :iterate library.
-
+  "A combination of destructuring, multiple-value-bind and defparameter.
 Example. 
  (flet ((foo () (values '(1 2) 3)))
-   (defdpar b c (foo))     ; b is '(1 2), c is 3
-   (defdpar (d e) (foo))   ; d is 1, e is 2
-   (defdpar f (car (foo))) ; f is 1"
+   (defdpar b c (foo))      ; b is '(1 2), c is 3
+   (defdpar (d e) (foo))    ; d is 1, e is 2
+   (defdpar f (car (foo)))) ; f is 1
+Note that full lambda-lists are not supported."
   (if (= 2 (length vars-and-val))
       `(progn
          ,(let ((values (gensym))
@@ -160,3 +158,42 @@ Example.
            ,@(loop for var-structure in vars
                 for gensym in gensyms
                 appending (cdr (macroexpand-1 `(defdpar ,var-structure ,gensym))))))))
+
+
+(defmacro dlet* (bindings &body body)
+  "A combination of multiple-value-setq, let* and destructuring.
+Example:
+ (dlet* (((a c) b (values '(1 3) 2))
+         (d e f (values 1 2))
+         ((a b) '(4 5))) 
+   (list a b c d e f))
+ ;; => (4 5 3 1 2 NIL)
+Note that full lambda lists are not supported."
+  (if bindings
+      (let* ((binding (first bindings))
+             (rest (rest bindings))
+             (rest-body (macroexpand-1 `(dlet* ,rest ,@body))))
+        (etypecase binding
+          (symbol `(let (,binding) ,rest-body))
+          (list (case (length binding)
+                  (2 (let ((values (gensym))
+                           (var-structure (first binding))
+                           (val-structure (second binding)))
+                       `(let ((,values ,val-structure))
+                          (unless (tree-equivalent-p ',var-structure ,values)
+                            (error (format nil "Cannot unpack ~A to ~A"
+                                           ,values ',var-structure)))
+                          ,@(traverse-tree var-structure values :cons 'cl:setq)
+                          ,rest-body)))
+                  (otherwise
+                   (let* ((vars (butlast binding))
+                          (gensyms (loop for var in vars collect (gensym))))
+                     `(let ,gensyms
+                        (declare (ignorable ,@gensyms))
+                        (multiple-value-setq ,gensyms ,(car (last binding)))
+                        ,@(loop for var-structure in vars
+                             for gensym in gensyms
+                             appending (traverse-tree var-structure gensym
+                                                      :cons 'cl:setq))
+                        ,rest-body)))))))
+      `(progn ,@body)))

@@ -114,4 +114,14 @@
     (is-error (defdpar (a) (foo)) 'simple-error)
     (is-error (defdpar (a b c) (foo)) 'simple-error)))
 
+(deftest dlet*-without-errors
+  (is (dlet* (((a c) b (values '(1 3) 2))
+              (d e f (values 1 2))
+              ((a b) '(4 5))) 
+        (list a b c d e f))
+      '(4 5 3 1 2 NIL)
+      :test #'equalp))
 
+(deftest dlet*-with-errors
+  (is-error (dlet* (((a b) 3)) t) 'simple-error)
+  (is-error (dlet* (((a b c) '(1 2))) t) 'simple-error))
