@@ -183,17 +183,19 @@ Note that full lambda lists are not supported."
                           (unless (tree-equivalent-p ',var-structure ,values)
                             (error (format nil "Cannot unpack ~A to ~A"
                                            ,values ',var-structure)))
-                          ,@(traverse-tree var-structure values :cons 'cl:setq)
-                          ,rest-body)))
+                          (let ,(alexandria:flatten var-structure)
+                            ,@(traverse-tree var-structure values :cons 'cl:setq)
+                            ,rest-body))))
                   (otherwise
                    (let* ((vars (butlast binding))
                           (gensyms (loop for var in vars collect (gensym))))
                      `(let ,gensyms
                         (declare (ignorable ,@gensyms))
                         (multiple-value-setq ,gensyms ,(car (last binding)))
-                        ,@(loop for var-structure in vars
-                             for gensym in gensyms
-                             appending (traverse-tree var-structure gensym
-                                                      :cons 'cl:setq))
-                        ,rest-body)))))))
+                        (let ,(append (mapcar #'alexandria:flatten vars))
+                          ,@(loop for var-structure in vars
+                               for gensym in gensyms
+                               appending (traverse-tree var-structure gensym
+                                                        :cons 'cl:setq))
+                          ,rest-body))))))))
       `(progn ,@body)))
