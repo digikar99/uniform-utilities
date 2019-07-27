@@ -37,9 +37,31 @@ However, unlike `getv`, this does not allow for any type specifiers. (There aris
 
 This, too, has `(setf getv-chained)`.
 
+### Reader macros for getv-chained
+
+Example:
+```lisp
+(named-readtables:in-readtable uniform-utilities:getv-chained)
+(defdpar str '("hello"))
+[str 0 2] ; => #\l
+(setf [str 0 2] #\d)
+str ; => ("hedlo")
+```
+
+Caution: `in-readtable` does not seem very reliable. For instance, the following does not work 
+as expected:
+```lisp
+(named-readtables:in-readtable uniform-utilities:getv-chained) ; [str 0 2] works
+(named-readtables:in-readtable :standard)                      ; does not work
+(named-readtables:in-readtable uniform-utilities:getv-chained) ; does not work
+```
+
+
+
 ### defdpar
 `(defdpar &rest vars-and-val)`
 
+Example:
 ```lisp
 (flet ((foo () (values '(1 2) 3)))
    (defdpar b c (foo))      ; b is '(1 2), c is 3
@@ -52,6 +74,7 @@ This provides a combination of `destructuring` with `defparameter`. However, lam
 ### dlet*
 `(dlet* bindings &body body)`
 
+Example:
 ```lisp
 (dlet* (((a c) b (values '(1 3) 2))
         (d e f (values 1 2))

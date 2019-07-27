@@ -85,7 +85,9 @@
     (is (getv-chained list-str 1 3) #\l)
     (is (getv-chained list-ht 0 "uniform") "utilities" :test #'string=)))
 (deftest setf-getv-chained
-  (env-getf-chained
+  (let ((list '(1 2 #(a b #2A((q w e)(r t y)))))
+        (list-ht (list (alexandria:alist-hash-table '(("uniform" . "utilities"))
+                                                     :test 'equal))))
     (is (progn (setf (getv-chained list
                                    2 2 '(1 1))
                      list-ht)
@@ -93,6 +95,14 @@
                              2 2 '(1 1) 0 "uniform"))
         "utilities"
         :test #'string=)))
+
+(named-readtables:in-readtable getv-chained)
+(deftest getv-chained-reader
+  (env-getf-chained
+    (is [list 2 2 '(1 1)] 't)
+    (setf [list 2 2 '(1 1)] list-ht)
+    (is [list 2 2 '(1 1) 0 "uniform"] "utilities")))
+
 
 (defmacro env-defdpar (&body body)
   `(flet ((foo () (values '(1 2) 6)))
@@ -125,3 +135,4 @@
 (deftest dlet*-with-errors
   (is-error (dlet* (((a b) 3)) t) 'simple-error)
   (is-error (dlet* (((a b c) '(1 2))) t) 'simple-error))
+

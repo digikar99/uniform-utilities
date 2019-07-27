@@ -1,5 +1,5 @@
 (defpackage :uniform-utilities
-  (:use :common-lisp :iterate)
+  (:use :common-lisp :iterate :named-readtables)
   (:shadowing-import-from :iterate)
   (:export
    :getv
@@ -106,6 +106,22 @@ This won't work with multidimensional arrays though!"
   (setf (getv (apply #'getv-chained object (butlast keys))
               (car (last keys)))
         value))
+(defvar *inside-square-bracket*)
+(defun getv-chained-reader (stream char)
+  (declare (ignore char))
+  (cons 'uniform-utilities:getv-chained
+        (iter (for next-char = (peek-char t stream nil))
+              (while next-char)
+              (until (char= #\] next-char))
+              (collect (read stream))
+              (finally (read-char stream nil)))))
+
+(defreadtable getv-chained
+  (:merge :standard)
+  (:macro-char #\[ #'getv-chained-reader)
+  (:macro-char #\] (lambda (stream char)
+                     (declare (ignore stream))
+                     (error "No matching [ for ]"))))
 
 (defun traverse-tree (var-structure val-structure &key cons)
   "A helper function for DEFDPAR.
